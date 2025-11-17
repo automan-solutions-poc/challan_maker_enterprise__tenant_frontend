@@ -36,3 +36,22 @@
     transform: rotate(360deg);
   }
 }
+
+
+.dropdown-menu {
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 8px !important;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  padding: 6px 12px !important;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa !important;
+}
