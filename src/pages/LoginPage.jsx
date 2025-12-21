@@ -26,7 +26,12 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await API.post("/login", { email, password });
+      const res = await API.post("/login", { email, password },{
+    headers: {
+      "Content-Type": "application/json",
+    },
+    withCredentials: false, // IMPORTANT
+  });
       const { token, tenant, user } = res.data;
 
       if (!token) throw new Error("Invalid server response");
