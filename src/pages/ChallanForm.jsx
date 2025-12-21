@@ -292,7 +292,6 @@ export default function ChallanForm({ editMode = false }) {
                   "Damage",
                   "Mother Board",
                   "Printer",
-                  "Speaker",
                   "CPU",
                   "Toner",
                   "LCD / LED / IPS",

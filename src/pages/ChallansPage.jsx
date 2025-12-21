@@ -52,7 +52,7 @@ export default function ChallansPage() {
   });
 
   const navigate = useNavigate();
-  const base_url_for_img = "http://127.0.0.1:6001";
+  const base_url_for_img = "http://api.automan.solutions";
   // const base_url_for_img = "http://192.168.1.12:6001";
 
   // Determine user role robustly from localStorage
@@ -76,23 +76,59 @@ export default function ChallansPage() {
   };
 
   // 🧠 Fetch all challans
-  const fetchChallans = async () => {
-    try {
-      setProcessing(true);
-      const res = await API.get("/challans");
-      setChallans(res.data);
-      setFilteredChallans(res.data);
-      // reset selections on fresh load
-      setSelectedSet(new Set());
-      setSelectAll(false);
-    } catch (err) {
-      console.error("fetch challans", err);
-      setMsg("Failed to fetch challans");
-    } finally {
-      setLoading(false);
-      setProcessing(false);
+  // const fetchChallans = async () => {
+  //   try {
+  //     setProcessing(true);
+  //     const res = await API.get("/challans");
+  //     setChallans(res.data);
+  //     setFilteredChallans(res.data);
+  //     // reset selections on fresh load
+  //     setSelectedSet(new Set());
+  //     setSelectAll(false);
+  //   } catch (err) {
+  //     console.error("fetch challans", err);
+  //     setMsg("Failed to fetch challans");
+  //   } finally {
+  //     setLoading(false);
+  //     setProcessing(false);
+  //   }
+  // };
+const fetchChallans = async () => {
+  try {
+    setProcessing(true);
+
+    const res = await API.get("/challans");
+
+    // 🚨 NGROK SAFETY CHECK
+    if (
+      !res.headers["content-type"] ||
+      !res.headers["content-type"].includes("application/json")
+    ) {
+      console.error("Non-JSON response received:", res.data);
+      setMsg("❌ Server returned invalid response (ngrok warning)");
+      setChallans([]);
+      setFilteredChallans([]);
+      return;
     }
-  };
+
+    const list = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.challans)
+      ? res.data.challans
+      : [];
+
+    setChallans(list);
+    setFilteredChallans(list);
+  } catch (err) {
+    console.error("fetch challans error:", err);
+    setMsg("❌ Failed to fetch challans");
+    setChallans([]);
+    setFilteredChallans([]);
+  } finally {
+    setLoading(false);
+    setProcessing(false);
+  }
+};
 
   useEffect(() => {
     fetchChallans();

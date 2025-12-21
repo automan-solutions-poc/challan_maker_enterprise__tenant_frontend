@@ -2,8 +2,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:6001/api/tenant", // tenant backend prefix
+  baseURL: "http://api.automan.solutions/api/tenant", // tenant backend prefix
   // baseURL: "http://192.168.1.12:6001/api/tenant", // tenant backend prefix
+
 });
 
 // Attach token automatically
