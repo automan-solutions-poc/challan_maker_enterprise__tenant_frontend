@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://api.automan.solutions/api/tenant", // tenant backend prefix
+  baseURL: "https://api.automan.solutions/api/tenant", // tenant backend prefix
   // baseURL: "http://192.168.1.12:6001/api/tenant", // tenant backend prefix
 
 });
