@@ -65,3 +65,11 @@
   background-color: #0b5ed7;
   transform: translateY(-2px);
 }
+
+/* 💻 Responsive adjustments */
+@media (max-width: 576px) {
+  .login-card {
+    width: 90%;
+    padding: 1.5rem;
+  }
+}

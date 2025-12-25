@@ -109,28 +109,52 @@
 /* 💻 Responsive */
 @media (max-width: 768px) {
   .tenant-sidebar {
-    width: 70px;
+    position: fixed;
+    left: -250px; /* Hidden by default */
+    top: 0;
+    height: 100%;
+    transition: left 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .tenant-sidebar.is-open {
+    left: 0;
   }
 
   .tenant-name {
-    display: none;
+    display: block; /* Ensure tenant name is visible when sidebar is open */
   }
 
   .tenant-link {
-    justify-content: center;
-    padding: 12px;
-  }
-
-  .tenant-link svg {
-    margin-right: 0;
+    justify-content: flex-start;
+    padding: 10px 14px;
   }
 
   .tenant-header {
-    justify-content: center;
+    justify-content: flex-start;
   }
+}
 
-  .tenant-logo {
+.sidebar-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: block;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 50%;
     width: 40px;
     height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
 }

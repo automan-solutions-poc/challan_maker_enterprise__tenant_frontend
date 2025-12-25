@@ -27,6 +27,7 @@ import {
   ShieldLock,
   Gear,
 } from "react-bootstrap-icons";
+import "./ChallansPage.css";
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
@@ -384,7 +385,7 @@ const fetchChallans = async () => {
       {msg && <Alert variant={msg.startsWith("✅") ? "success" : "danger"}>{msg}</Alert>}
 
       {/* Filter Card */}
-      <Card className="p-3 mb-3 shadow-sm">
+      <Card className="p-3 mb-3 shadow-sm challans-filter-card">
         <Row className="align-items-end">
           <Col md={3}>
             <Form.Group>
@@ -434,7 +435,7 @@ const fetchChallans = async () => {
       </Card>
 
       {/* Top bar with Create & Bulk actions */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-3 challans-actions-bar">
         <div>
           <Button onClick={() => navigate("/app/challan/new")} variant="primary" className="me-2">
             + Create Challan
@@ -458,10 +459,11 @@ const fetchChallans = async () => {
       </div>
 
       {/* Challans Table */}
-      <Table striped bordered hover responsive className="mt-3 align-middle">
-        <thead>
-          <tr>
-            <th style={{ width: 40 }}>
+      <div className="challans-table-responsive">
+        <Table striped bordered hover className="mt-3 align-middle">
+          <thead>
+            <tr>
+              <th style={{ width: 40 }}>
               <Form.Check
                 type="checkbox"
                 checked={selectAll}
@@ -581,7 +583,8 @@ const fetchChallans = async () => {
             })
           )}
         </tbody>
-      </Table>
+        </Table>
+      </div>
 
       {/* QR Modal */}
       <Modal show={!!qrPreview} onHide={() => setQrPreview(null)} centered size="sm">

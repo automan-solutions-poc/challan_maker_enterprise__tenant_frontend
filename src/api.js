@@ -2,8 +2,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://api.automan.solutions/api/tenant", // tenant backend prefix
-  // baseURL: "http://192.168.1.12:6001/api/tenant", // tenant backend prefix
+  // baseURL: "https://api.automan.solutions/api/tenant", // tenant backend prefix
+  baseURL: "http://localhost:6001/api/tenant", // tenant backend prefix
 
 });
 
