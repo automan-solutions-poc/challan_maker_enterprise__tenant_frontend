@@ -1,5 +1,5 @@
 // src/compopnents/TenantLayout.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Container, Nav, Button } from "react-bootstrap";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -10,10 +10,12 @@ import {
   Mail,
   ScrollText,
   LogOut,
+  Menu,
 } from "lucide-react";
 import "./TenantLayout.css";
 
 export default function TenantLayout() {
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
   const tenant = JSON.parse(localStorage.getItem("tenant_info") || "null");
@@ -25,10 +27,20 @@ export default function TenantLayout() {
     navigate("/login");
   };
 
+  const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
+
   return (
     <div className="tenant-layout d-flex">
+      <button className="sidebar-toggle" onClick={toggleSidebar}>
+        <Menu size={20} />
+      </button>
+
       {/* Sidebar */}
-      <aside className="tenant-sidebar bg-dark text-white d-flex flex-column justify-content-between">
+      <aside
+        className={`tenant-sidebar bg-dark text-white d-flex flex-column justify-content-between ${
+          isSidebarOpen ? "is-open" : ""
+        }`}
+      >
         <div>
           {/* Company Header */}
           <div className="tenant-header text-center py-4 border-bottom border-secondary">
@@ -38,37 +50,60 @@ export default function TenantLayout() {
             <h5 className="tenant-name mb-0">{tenant?.name || user?.tenant_name}</h5>
           </div>
 
-         <Nav className="tenant-nav flex-column">
-  <Nav.Link as={NavLink} to="/app/dashboard" className="tenant-link text-white">
-    <LayoutDashboard size={18} className="me-2" /> Dashboard
-  </Nav.Link>
+          <Nav className="tenant-nav flex-column">
+            <Nav.Link
+              as={NavLink}
+              to="/app/dashboard"
+              className="tenant-link text-white"
+            >
+              <LayoutDashboard size={18} className="me-2" /> Dashboard
+            </Nav.Link>
 
-  <Nav.Link as={NavLink} to="/app/challans" className="tenant-link text-white">
-    <FileText size={18} className="me-2" /> Challans
-  </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/app/challans"
+              className="tenant-link text-white"
+            >
+              <FileText size={18} className="me-2" /> Challans
+            </Nav.Link>
 
-  <Nav.Link as={NavLink} to="/app/challan/new" className="tenant-link text-white">
-    <PlusCircle size={18} className="me-2" /> New Challan
-  </Nav.Link>
+            <Nav.Link
+              as={NavLink}
+              to="/app/challan/new"
+              className="tenant-link text-white"
+            >
+              <PlusCircle size={18} className="me-2" /> New Challan
+            </Nav.Link>
 
-  {/* Admin-only links */}
-  {user?.role === "tenant_admin" && (
-    <>
-      <Nav.Link as={NavLink} to="/app/settings" className="tenant-link text-white">
-        <Palette size={18} className="me-2" /> Design Settings
-      </Nav.Link>
+            {/* Admin-only links */}
+            {user?.role === "tenant_admin" && (
+              <>
+                <Nav.Link
+                  as={NavLink}
+                  to="/app/settings"
+                  className="tenant-link text-white"
+                >
+                  <Palette size={18} className="me-2" /> Design Settings
+                </Nav.Link>
 
-      <Nav.Link as={NavLink} to="/app/email-settings" className="tenant-link text-white">
-        <Mail size={18} className="me-2" /> Email Settings
-      </Nav.Link>
+                <Nav.Link
+                  as={NavLink}
+                  to="/app/email-settings"
+                  className="tenant-link text-white"
+                >
+                  <Mail size={18} className="me-2" /> Email Settings
+                </Nav.Link>
 
-      <Nav.Link as={NavLink} to="/app/terms" className="tenant-link text-white">
-        <FileText size={18} className="me-2" /> Terms & Conditions
-      </Nav.Link>
-    </>
-  )}
-</Nav>
-
+                <Nav.Link
+                  as={NavLink}
+                  to="/app/terms"
+                  className="tenant-link text-white"
+                >
+                  <FileText size={18} className="me-2" /> Terms & Conditions
+                </Nav.Link>
+              </>
+            )}
+          </Nav>
         </div>
 
         {/* Footer (Logout Button) */}

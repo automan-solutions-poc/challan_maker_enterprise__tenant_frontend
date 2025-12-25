@@ -4,6 +4,7 @@ import API from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 import ChallanPreview from "../compopnents/ChallanPreview";
 import Loader from "../compopnents/Loader";
+import "./ChallanForm.css";
 
 export default function ChallanForm({ editMode = false }) {
   const { challan_no } = useParams();
@@ -156,10 +157,10 @@ export default function ChallanForm({ editMode = false }) {
       <h3>{editMode ? "Edit Challan" : "Create Challan"}</h3>
       {msg && <Alert variant={msg.includes("✅") ? "success" : "danger"}>{msg}</Alert>}
 
-      <div className="d-flex m-2">
+      <div className="challan-form-container">
         {/* LEFT SIDE: FORM */}
-        <div className="w-100 m-2">
-          <Form onSubmit={submit} className="form-grid ">
+        <div className="challan-form-main">
+          <Form onSubmit={submit}>
             <div className="card p-3 mb-3 shadow-sm">
               <Form.Group className="mb-2">
                 <Form.Label>M/s. (Customer)</Form.Label>
@@ -363,8 +364,8 @@ export default function ChallanForm({ editMode = false }) {
         </div>
 
         {/* RIGHT SIDE: PREVIEW */}
-        <div className="w-100 m-2">
-          <div className="mt-4 ">
+        <div className="challan-form-preview">
+          <div className="mt-4">
             <h5>Live Preview</h5>
             <ChallanPreview
               template={template}

@@ -1,0 +1,22 @@
+.challans-table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .challans-filter-card .row > .col-md-3 {
+    margin-bottom: 1rem;
+  }
+  .challans-filter-card .text-end {
+    text-align: left !important;
+  }
+  .challans-actions-bar {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .challans-actions-bar > div:first-child {
+    margin-bottom: 1rem;
+  }
+}
