@@ -115,7 +115,7 @@ export default function LoginPage() {
                 </Form>
 
                 <div className="text-center mt-4 text-muted small">
-                  © {new Date().getFullYear()} Automan Solutions
+                  © {new Date().getFullYear()} InfiChallan. All rights reserved.
                 </div>
               </Card.Body>
             </Card>
