@@ -93,7 +93,7 @@ const LandingPage: React.FC = () => {
           </motion.div>
 
           {/* Social Proof Logos */}
-          <motion.div 
+          {/* <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 1 }}
@@ -105,7 +105,7 @@ const LandingPage: React.FC = () => {
                 <span key={brand} className="text-2xl font-black font-display italic tracking-tighter">{brand}</span>
               ))}
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 
