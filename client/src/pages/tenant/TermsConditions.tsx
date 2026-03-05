@@ -36,11 +36,11 @@ const TermsConditions: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-zinc-500">Loading...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-zinc-500">Loading...</div>;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Terms & Conditions</h1>
           <p className="text-zinc-500">These will appear at the bottom of your generated Challan PDFs.</p>

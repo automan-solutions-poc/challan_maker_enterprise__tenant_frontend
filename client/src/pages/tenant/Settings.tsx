@@ -24,10 +24,10 @@ const TenantSettings: React.FC = () => {
     });
   }, []);
 
-  if (!data) return <div className="p-8 text-zinc-500">Loading settings...</div>;
+  if (!data) return <div className="p-4 md:p-8 text-zinc-500">Loading settings...</div>;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Store Settings</h1>
         <p className="text-zinc-500">Configure your store branding and preferences</p>

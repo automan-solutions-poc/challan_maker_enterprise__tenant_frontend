@@ -21,7 +21,7 @@ const TenantDashboard: React.FC = () => {
     });
   }, []);
 
-  if (loading) return <div className="p-8 text-zinc-500">Loading dashboard...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-zinc-500">Loading dashboard...</div>;
 
   const stats = [
     { label: 'Pending', value: challans.filter(c => c.status === 'pending').length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
@@ -31,8 +31,8 @@ const TenantDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Store Dashboard</h1>
           <p className="text-zinc-500">Manage your repair service operations</p>

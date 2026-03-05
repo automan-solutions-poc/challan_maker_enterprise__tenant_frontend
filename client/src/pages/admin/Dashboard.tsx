@@ -20,7 +20,7 @@ const AdminDashboard: React.FC = () => {
     });
   }, []);
 
-  if (loading) return <div className="p-8 text-zinc-500">Loading stats...</div>;
+  if (loading) return <div className="p-4 md:p-8 text-zinc-500">Loading stats...</div>;
 
   const cards = [
     { label: 'Total Tenants', value: stats.totalTenants, icon: Store, color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -30,7 +30,7 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Platform Overview</h1>
         <p className="text-zinc-500">Real-time performance metrics for Challan Maker Enterprise</p>

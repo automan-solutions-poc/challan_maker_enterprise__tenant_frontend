@@ -31,8 +31,8 @@ const AdminTenants: React.FC = () => {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Tenants</h1>
           <p className="text-zinc-500">Manage repair stores on your platform</p>
@@ -47,8 +47,8 @@ const AdminTenants: React.FC = () => {
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex flex-col sm:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
             <input 
               type="text" 
@@ -58,7 +58,8 @@ const AdminTenants: React.FC = () => {
           </div>
         </div>
 
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-zinc-950 text-zinc-500 text-xs uppercase tracking-wider">
               <th className="px-6 py-4 font-semibold">Store Name</th>
@@ -110,7 +111,8 @@ const AdminTenants: React.FC = () => {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       {showModal && (
