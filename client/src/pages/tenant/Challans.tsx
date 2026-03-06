@@ -23,6 +23,9 @@ const TenantChallans: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [otpModal, setOtpModal] = useState<{ open: boolean, challan_no: string, otp: string }>({ open: false, challan_no: '', otp: '' });
+  const [filters, setFilters] = useState({ fromDate: '', toDate: '', status: 'all' });
+  const [selectedSet, setSelectedSet] = useState<Set<string>>(new Set());
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     fetchChallans();
@@ -118,35 +121,150 @@ const TenantChallans: React.FC = () => {
     doc.save(`Challan_${challan.challan_no}.pdf`);
   };
 
-  const updateStatus = async (id: number, status: string) => {
-    await api.patch(`/tenant/challans/${id}`, { status });
+  const updateStatus = async (challan: any, status: string) => {
+    if (status === 'delivered') {
+      handleSendOTP(challan.challan_no);
+      return;
+    }
+    await api.patch(`/tenant/challans/${challan.id}`, { status });
     fetchChallans();
   };
 
-  const filtered = challans.filter(c => 
-    c.customer_name.toLowerCase().includes(search.toLowerCase()) || 
-    c.challan_no.toLowerCase().includes(search.toLowerCase())
-  );
+  const toggleRowSelect = (challan_no: string) => {
+    const s = new Set(selectedSet);
+    if (s.has(challan_no)) s.delete(challan_no);
+    else s.add(challan_no);
+    setSelectedSet(s);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedSet.size === filtered.length && filtered.length > 0) {
+      setSelectedSet(new Set());
+    } else {
+      setSelectedSet(new Set(filtered.map(c => c.challan_no)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selectedSet.size} challan(s)?`)) return;
+    setProcessing(true);
+    try {
+      const challanIdsToDelete = Array.from(selectedSet).map(no => {
+        const c = challans.find(challan => challan.challan_no === no);
+        return c?.id;
+      }).filter(Boolean);
+
+      await Promise.all(challanIdsToDelete.map(id => api.delete(`/tenant/challans/${id}`)));
+      setSelectedSet(new Set());
+      fetchChallans();
+      alert('Selected challans deleted successfully');
+    } catch (err) {
+      alert('Failed to delete some challans');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const filtered = challans.filter(c => {
+    const matchesSearch = c.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+                          c.challan_no.toLowerCase().includes(search.toLowerCase());
+
+    const challanDate = new Date(c.date);
+    const fromDate = filters.fromDate ? new Date(filters.fromDate) : null;
+    const toDate = filters.toDate ? new Date(filters.toDate) : null;
+    if (toDate) toDate.setHours(23, 59, 59, 999);
+
+    const matchesDate = (!fromDate || challanDate >= fromDate) &&
+                        (!toDate || challanDate <= toDate);
+
+    const matchesStatus = filters.status === 'all' || c.status === filters.status;
+
+    return matchesSearch && matchesDate && matchesStatus;
+  });
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6 relative">
+      {processing && (
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-2xl">
+          <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center gap-3 shadow-2xl">
+            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-white font-medium">Processing...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Service Challans</h1>
           <p className="text-zinc-500">View and manage all repair requests</p>
         </div>
-        <Link 
-          to="/challans/new"
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
-        >
-          <Plus size={18} />
-          Create New
-        </Link>
+        <div className="flex items-center gap-3">
+          {selectedSet.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors border border-red-500/20"
+            >
+              <Trash2 size={18} />
+              Delete Selected ({selectedSet.size})
+            </button>
+          )}
+          <Link
+            to="/challans/new"
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors shadow-lg shadow-blue-600/20"
+          >
+            <Plus size={18} />
+            Create New
+          </Link>
+        </div>
+      </div>
+
+      {/* Filter Card */}
+      <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">From Date</label>
+          <input
+            type="date"
+            value={filters.fromDate}
+            onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">To Date</label>
+          <input
+            type="date"
+            value={filters.toDate}
+            onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider ml-1">Status</label>
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="repairing">Repairing</option>
+            <option value="completed">Completed</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+        <div className="flex items-end gap-2">
+          <button
+            onClick={() => setFilters({ fromDate: '', toDate: '', status: 'all' })}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-2 rounded-xl text-sm font-medium transition-colors"
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-zinc-800 bg-zinc-900/50 flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative flex-1 w-full sm:max-w-md">
+        <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
             <input 
               type="text" 
@@ -156,15 +274,20 @@ const TenantChallans: React.FC = () => {
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-blue-500"
             />
           </div>
-          <button className="p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
-            <Filter size={18} />
-          </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-zinc-950 text-zinc-500 text-xs uppercase tracking-wider">
+                <th className="px-6 py-4 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedSet.size === filtered.length && filtered.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
                 <th className="px-6 py-4 font-semibold">Challan No</th>
                 <th className="px-6 py-4 font-semibold">Customer</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
@@ -174,7 +297,15 @@ const TenantChallans: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {filtered.map((challan) => (
-                <tr key={challan.id} className="hover:bg-zinc-800/30 transition-colors group">
+                <tr key={challan.id} className={`hover:bg-zinc-800/30 transition-colors group ${selectedSet.has(challan.challan_no) ? 'bg-blue-500/5' : ''}`}>
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedSet.has(challan.challan_no)}
+                      onChange={() => toggleRowSelect(challan.challan_no)}
+                      className="w-4 h-4 rounded border-zinc-800 bg-zinc-950 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-mono text-blue-400 font-medium">{challan.challan_no}</span>
                   </td>
@@ -187,7 +318,7 @@ const TenantChallans: React.FC = () => {
                   <td className="px-6 py-4">
                     <select 
                       value={challan.status}
-                      onChange={(e) => updateStatus(challan.id, e.target.value)}
+                      onChange={(e) => updateStatus(challan, e.target.value)}
                       className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-zinc-950 border border-zinc-800 focus:outline-none ${
                         challan.status === 'completed' ? 'text-emerald-400 border-emerald-500/20' :
                         challan.status === 'repairing' ? 'text-blue-400 border-blue-500/20' :
@@ -226,7 +357,14 @@ const TenantChallans: React.FC = () => {
                       <button className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
                         <Printer size={16} />
                       </button>
-                      <button className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-400 hover:text-red-400 transition-colors">
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Delete this challan?')) {
+                            api.delete(`/tenant/challans/${challan.id}`).then(() => fetchChallans());
+                          }
+                        }}
+                        className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-400 hover:text-red-400 transition-colors"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -235,7 +373,7 @@ const TenantChallans: React.FC = () => {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 italic">
+                  <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 italic">
                     No challans found matching your search.
                   </td>
                 </tr>
