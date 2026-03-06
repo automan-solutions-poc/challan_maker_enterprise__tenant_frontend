@@ -68,7 +68,7 @@ const TenantChallans: React.FC = () => {
     
     doc.setFontSize(10);
     doc.text(`No: ${challan.challan_no}`, 160, 20);
-    doc.text(`Date: ${new Date(challan.created_at).toLocaleDateString()}`, 160, 26);
+    doc.text(`Date: ${new Date(challan.date).toLocaleDateString()}`, 160, 26);
 
     // Customer Info
     doc.setTextColor(0, 0, 0);
@@ -203,7 +203,7 @@ const TenantChallans: React.FC = () => {
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-500">
-                    {new Date(challan.created_at).toLocaleDateString()}
+                    {new Date(challan.date).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
