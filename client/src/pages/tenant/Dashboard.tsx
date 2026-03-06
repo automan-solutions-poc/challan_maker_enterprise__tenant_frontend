@@ -25,9 +25,9 @@ const TenantDashboard: React.FC = () => {
 
   const stats = [
     { label: 'Pending', value: challans.filter(c => c.status === 'pending').length, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    { label: 'In Progress', value: challans.filter(c => c.status === 'repairing').length, icon: AlertCircle, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Completed', value: challans.filter(c => c.status === 'completed').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Delivered', value: challans.filter(c => c.status === 'delivered').length, icon: FileText, color: 'text-zinc-400', bg: 'bg-zinc-400/10' },
+    { label: 'Delivered', value: challans.filter(c => c.status === 'delivered').length, icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Cancelled', value: challans.filter(c => c.status === 'cancelled').length, icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-500/10' },
+    { label: 'Total', value: challans.length, icon: FileText, color: 'text-zinc-400', bg: 'bg-zinc-400/10' },
   ];
 
   return (
@@ -110,9 +110,9 @@ const TenantDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      challan.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
-                      challan.status === 'repairing' ? 'bg-blue-500/10 text-blue-400' :
+                      challan.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-400' :
                       challan.status === 'pending' ? 'bg-amber-500/10 text-amber-400' :
+                      challan.status === 'cancelled' ? 'bg-red-500/10 text-red-400' :
                       'bg-zinc-800 text-zinc-500'
                     }`}>
                       {challan.status}
