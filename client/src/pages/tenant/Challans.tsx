@@ -153,7 +153,7 @@ const TenantChallans: React.FC = () => {
     setProcessing(true);
     setMsg('');
     try {
-      await api.delete(`/tenant/challans/${challan.id}`);
+      await api.delete(`/tenant/challan/${challan.challan_no}`);
       setMsg('🗑️ Challan deleted successfully');
       fetchChallans();
     } catch (err) {
@@ -170,18 +170,13 @@ const TenantChallans: React.FC = () => {
     setMsg('');
     const items = Array.from(selectedSet);
     try {
-      const challanIdsToDelete = items.map(no => {
-        const c = challans.find(challan => challan.challan_no === no);
-        return { id: c?.id, no };
-      }).filter(item => item.id);
-
       const results = await Promise.allSettled(
-        challanIdsToDelete.map(item => api.delete(`/tenant/challans/${item.id}`))
+        items.map(no => api.delete(`/tenant/challan/${no}`))
       );
 
       const failed = results.reduce((acc: string[], r, idx) => {
         if (r.status === 'rejected') {
-          acc.push(challanIdsToDelete[idx].no);
+          acc.push(items[idx]);
         }
         return acc;
       }, []);
