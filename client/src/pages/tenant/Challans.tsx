@@ -35,16 +35,21 @@ const TenantChallans: React.FC = () => {
   }, []);
 
   const fetchChallans = async () => {
-    const { data } = await api.get('/tenant/challans');
-    setChallans(data);
-    setLoading(false);
+    try {
+      const { data } = await api.get('/tenant/challans');
+      setChallans(data);
+    } catch (err) {
+      console.error("fetch failed", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSendOTP = async (challan_no: string) => {
     try {
       const { data } = await api.post(`/tenant/challan/${challan_no}/send_otp`);
       setOtpModal({ open: true, challan_no, otp: '' });
-      alert(data.message);
+      alert(data.message || 'OTP sent to customer');
     } catch (err: any) {
       alert(err.response?.data?.error || 'Failed to send OTP');
     }
@@ -55,7 +60,7 @@ const TenantChallans: React.FC = () => {
       await api.post(`/tenant/challan/${otpModal.challan_no}/verify_otp`, { otp: otpModal.otp });
       setOtpModal({ open: false, challan_no: '', otp: '' });
       fetchChallans();
-      alert('Challan delivered successfully!');
+      setMsg('✅ Challan delivered successfully!');
     } catch (err: any) {
       alert(err.response?.data?.error || 'Verification failed');
     }
@@ -74,7 +79,7 @@ const TenantChallans: React.FC = () => {
     
     doc.setFontSize(10);
     doc.text(`No: ${challan.challan_no}`, 160, 20);
-    doc.text(`Date: ${new Date(challan.date).toLocaleDateString()}`, 160, 26);
+    doc.text(`Date: ${new Date(challan.date || challan.created_at).toLocaleDateString()}`, 160, 26);
 
     // Customer Info
     doc.setTextColor(0, 0, 0);
@@ -95,10 +100,15 @@ const TenantChallans: React.FC = () => {
     doc.text(`Status: ${challan.status.toUpperCase()}`, 110, 71);
 
     // Problem Table
+    let accessories = [];
+    try {
+      accessories = typeof challan.accessories === 'string' ? JSON.parse(challan.accessories) : (challan.accessories || []);
+    } catch(e) { accessories = []; }
+
     autoTable(doc, {
       startY: 90,
       head: [['Description of Problem', 'Accessories Received']],
-      body: [[challan.problem, JSON.parse(challan.accessories).join(', ')]],
+      body: [[challan.problem, (Array.isArray(accessories) ? accessories : []).join(', ')]],
       theme: 'grid',
       headStyles: { fillColor: [59, 130, 246] }
     });
@@ -129,8 +139,12 @@ const TenantChallans: React.FC = () => {
       handleSendOTP(challan.challan_no);
       return;
     }
-    await api.patch(`/tenant/challans/${challan.id}`, { status });
-    fetchChallans();
+    try {
+      await api.patch(`/tenant/challans/${challan.id}`, { status });
+      fetchChallans();
+    } catch (err) {
+      console.error("status update failed", err);
+    }
   };
 
   const toggleRowSelect = (challan_no: string) => {
@@ -201,7 +215,7 @@ const TenantChallans: React.FC = () => {
     const matchesSearch = c.customer_name.toLowerCase().includes(search.toLowerCase()) ||
                           c.challan_no.toLowerCase().includes(search.toLowerCase());
 
-    const challanDate = new Date(c.date);
+    const challanDate = new Date(c.date || c.created_at);
     const fromDate = filters.fromDate ? new Date(filters.fromDate) : null;
     const toDate = filters.toDate ? new Date(filters.toDate) : null;
     if (toDate) toDate.setHours(23, 59, 59, 999);
@@ -295,9 +309,8 @@ const TenantChallans: React.FC = () => {
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
-            <option value="repairing">Repairing</option>
-            <option value="completed">Completed</option>
             <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
         <div className="flex items-end gap-2">
@@ -373,25 +386,23 @@ const TenantChallans: React.FC = () => {
                       value={challan.status}
                       onChange={(e) => updateStatus(challan, e.target.value)}
                       className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-zinc-950 border border-zinc-800 focus:outline-none ${
-                        challan.status === 'completed' ? 'text-emerald-400 border-emerald-500/20' :
-                        challan.status === 'repairing' ? 'text-blue-400 border-blue-500/20' :
+                        challan.status === 'delivered' ? 'text-emerald-400 border-emerald-500/20' :
                         challan.status === 'pending' ? 'text-amber-400 border-amber-500/20' :
+                        challan.status === 'cancelled' ? 'text-red-400 border-red-500/20' :
                         'text-zinc-500'
                       }`}
                     >
                       <option value="pending">Pending</option>
-                      <option value="repairing">Repairing</option>
-                      <option value="completed">Completed</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-500">
-                    {new Date(challan.date).toLocaleDateString()}
+                    {new Date(challan.date || challan.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {challan.status === 'completed' && (
+                      {challan.status === 'pending' && (
                         <button 
                           onClick={() => handleSendOTP(challan.challan_no)}
                           className="p-2 hover:bg-emerald-500/10 rounded-lg text-emerald-500 transition-colors"
