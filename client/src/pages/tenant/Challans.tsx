@@ -12,7 +12,8 @@ import {
   ExternalLink,
   Filter,
   KeyRound,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -26,6 +27,8 @@ const TenantChallans: React.FC = () => {
   const [filters, setFilters] = useState({ fromDate: '', toDate: '', status: 'all' });
   const [selectedSet, setSelectedSet] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     fetchChallans();
@@ -145,21 +148,55 @@ const TenantChallans: React.FC = () => {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedSet.size} challan(s)?`)) return;
+  const handleDelete = async (challan: any) => {
+    if (!window.confirm(`Delete challan ${challan.challan_no}?`)) return;
     setProcessing(true);
+    setMsg('');
     try {
-      const challanIdsToDelete = Array.from(selectedSet).map(no => {
-        const c = challans.find(challan => challan.challan_no === no);
-        return c?.id;
-      }).filter(Boolean);
+      await api.delete(`/tenant/challans/${challan.id}`);
+      setMsg('🗑️ Challan deleted successfully');
+      fetchChallans();
+    } catch (err) {
+      console.error(err);
+      setMsg('❌ Failed to delete challan');
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-      await Promise.all(challanIdsToDelete.map(id => api.delete(`/tenant/challans/${id}`)));
+  const handleBulkDelete = async () => {
+    setProcessing(true);
+    setConfirmBulkDelete(false);
+    setMsg('');
+    const items = Array.from(selectedSet);
+    try {
+      const challanIdsToDelete = items.map(no => {
+        const c = challans.find(challan => challan.challan_no === no);
+        return { id: c?.id, no };
+      }).filter(item => item.id);
+
+      const results = await Promise.allSettled(
+        challanIdsToDelete.map(item => api.delete(`/tenant/challans/${item.id}`))
+      );
+
+      const failed = results.reduce((acc: string[], r, idx) => {
+        if (r.status === 'rejected') {
+          acc.push(challanIdsToDelete[idx].no);
+        }
+        return acc;
+      }, []);
+
+      if (failed.length === 0) {
+        setMsg(`✅ Deleted ${items.length} challan(s) successfully.`);
+      } else {
+        setMsg(`⚠️ Deleted ${items.length - failed.length} challan(s). Failed: ${failed.join(", ")}`);
+      }
+
       setSelectedSet(new Set());
       fetchChallans();
-      alert('Selected challans deleted successfully');
     } catch (err) {
-      alert('Failed to delete some challans');
+      console.error("bulk delete error", err);
+      setMsg('❌ Bulk delete failed.');
     } finally {
       setProcessing(false);
     }
@@ -184,6 +221,22 @@ const TenantChallans: React.FC = () => {
 
   return (
     <div className="p-4 md:p-8 space-y-6 relative">
+      {msg && (
+        <div className={`p-4 rounded-xl border flex items-center justify-between ${
+          msg.startsWith('✅') || msg.startsWith('🗑️') || msg.startsWith('⚠️')
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          <div className="flex items-center gap-3">
+            <AlertCircle size={20} />
+            <span className="text-sm font-medium">{msg}</span>
+          </div>
+          <button onClick={() => setMsg('')} className="hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
       {processing && (
         <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-2xl">
           <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex items-center gap-3 shadow-2xl">
@@ -201,7 +254,7 @@ const TenantChallans: React.FC = () => {
         <div className="flex items-center gap-3">
           {selectedSet.size > 0 && (
             <button
-              onClick={handleBulkDelete}
+              onClick={() => setConfirmBulkDelete(true)}
               className="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors border border-red-500/20"
             >
               <Trash2 size={18} />
@@ -358,11 +411,7 @@ const TenantChallans: React.FC = () => {
                         <Printer size={16} />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm('Delete this challan?')) {
-                            api.delete(`/tenant/challans/${challan.id}`).then(() => fetchChallans());
-                          }
-                        }}
+                        onClick={() => handleDelete(challan)}
                         className="p-2 hover:bg-red-500/10 rounded-lg text-zinc-400 hover:text-red-400 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -408,6 +457,41 @@ const TenantChallans: React.FC = () => {
               >
                 Confirm Delivery
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmBulkDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+              <h3 className="text-xl font-bold text-white">Confirm Bulk Delete</h3>
+              <button onClick={() => setConfirmBulkDelete(false)} className="text-zinc-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500">
+                <AlertCircle size={24} className="shrink-0" />
+                <p className="text-sm font-medium">
+                  Are you sure you want to delete <strong>{selectedSet.size}</strong> challan(s)? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setConfirmBulkDelete(false)}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-red-600/20"
+                >
+                  Confirm Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
