@@ -355,7 +355,12 @@ const TenantChallans: React.FC = () => {
                     />
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm font-mono text-blue-400 font-medium">{challan.challan_no}</span>
+                    <button
+                      onClick={() => generatePDF(challan)}
+                      className="text-sm font-mono text-blue-400 font-medium hover:underline cursor-pointer transition-all"
+                    >
+                      {challan.challan_no}
+                    </button>
                   </td>
                   <td className="px-6 py-4">
                     <div>
