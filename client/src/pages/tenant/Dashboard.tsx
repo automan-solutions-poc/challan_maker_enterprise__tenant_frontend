@@ -30,6 +30,21 @@ const TenantDashboard: React.FC = () => {
     { label: 'Total', value: challans.length, icon: FileText, color: 'text-zinc-400', bg: 'bg-zinc-400/10' },
   ];
 
+  // Prepare data for the graph (last 7 days)
+  const chartData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const count = challans.filter(c => (c.created_at || c.date).startsWith(dateStr)).length;
+    return {
+      label: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      value: count,
+      date: dateStr
+    };
+  });
+
+  const maxVal = Math.max(...chartData.map(d => d.value), 5);
+
   return (
     <div className="p-4 md:p-8 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -63,6 +78,43 @@ const TenantDashboard: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Analysis Graph */}
+      <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Service Volume</h3>
+            <p className="text-zinc-500 text-sm">Challans created in the last 7 days</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">
+            <CheckCircle2 size={12} />
+            Live Analytics
+          </div>
+        </div>
+
+        <div className="h-48 flex items-end gap-2 sm:gap-4">
+          {chartData.map((d, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+              <div className="w-full relative flex items-end justify-center h-40">
+                {/* Tooltip */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {d.value} Challans
+                </div>
+                {/* Bar */}
+                <div
+                  style={{ height: `${(d.value / maxVal) * 100}%` }}
+                  className="w-full max-w-[40px] bg-zinc-800 group-hover:bg-blue-600 rounded-t-lg transition-all duration-500 ease-out relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors">
+                {d.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
