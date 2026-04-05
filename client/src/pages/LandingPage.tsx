@@ -117,7 +117,7 @@ const LandingPage: React.FC = () => {
               <h2 className="text-4xl md:text-6xl font-bold mb-6 font-display">Built for speed. <br />Designed for trust.</h2>
               <p className="text-zinc-500 text-lg">We've obsessed over every detail of the repair workflow so you don't have to.</p>
             </div>
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
               <div className="p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
                 <div className="text-2xl font-bold text-white">99.9%</div>
                 <div className="text-xs text-zinc-500 uppercase font-bold tracking-widest">Uptime</div>
@@ -126,7 +126,7 @@ const LandingPage: React.FC = () => {
                 <div className="text-2xl font-bold text-white">1M+</div>
                 <div className="text-xs text-zinc-500 uppercase font-bold tracking-widest">Challans</div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
