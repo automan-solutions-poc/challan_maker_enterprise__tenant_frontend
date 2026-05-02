@@ -1,20 +1,86 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Challan Maker Enterprise
 
-# Run and deploy your AI Studio app
+A professional multi-tenant SaaS for computer repair stores to manage service challans, customers, and staff. Replace paper-based workflows with a modern, digital solution.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/2b349b52-b139-4253-99ab-c7c9495eba01
+### Admin Dashboard
+- **Tenant Management:** Create and manage repair store accounts.
+- **Subscription Overview:** (Coming Soon) Track tenant subscriptions and usage.
+- **Activity Logs:** (Coming Soon) Monitor system-wide actions.
 
-## Run Locally
+### Tenant (Store Owner) Dashboard
+- **Challan Management:** Create, view, and manage repair service challans.
+- **QR-Code Tracking:** Each challan includes a unique QR code for customers to track repair status.
+- **Professional PDF Generation:** Generate and download professional service receipts.
+- **OTP-Verified Delivery:** Secure the delivery process with customer OTP verification.
+- **Status Management:** Track repair progress through 'Pending', 'Delivered', and 'Cancelled' statuses.
+- **Staff Management:** (Coming Soon) Manage technicians and store staff.
+- **Customization:** Configure store details, terms and conditions, and email settings.
 
-**Prerequisites:**  Node.js
+### Security & Architecture
+- **Multi-tenant Isolation:** Each store's data is kept separate and secure.
+- **JWT Authentication:** Secure access for both admins and tenants.
+- **Responsive Design:** Fully optimized for desktop, tablet, and mobile use.
 
+## Tech Stack
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Frontend:** React, TypeScript, Tailwind CSS v4, Lucide React (Icons), Motion (Animations).
+- **Backend:** Node.js, Express.
+- **Database:** SQLite (via `better-sqlite3`).
+- **Utilities:** `jspdf` (PDF generation), `qrcode` (QR codes), `axios` (API requests).
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd challan-maker
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   Copy `.env.example` to `.env` and fill in the required values.
+   ```bash
+   cp .env.example .env
+   ```
+
+### Running the App
+
+- **Full Stack (Client + Server):**
+  ```bash
+  npm run dev
+  ```
+
+- **Backend Only:**
+  ```bash
+  npm run server
+  ```
+
+- **Frontend Only:**
+  ```bash
+  npm run client
+  ```
+
+### Build
+
+To create a production build of the frontend:
+```bash
+npm run build
+```
+
+## Directory Structure
+
+- `client/`: Frontend React application.
+- `server/`: (Note: Backend code is currently managed in the root via `package.json` scripts targeting `server/server.ts`).
+- `challan_maker.db`: SQLite database file.
