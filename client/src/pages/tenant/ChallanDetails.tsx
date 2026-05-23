@@ -13,7 +13,9 @@ import {
   Calendar,
   Hash,
   MapPin,
-  FileText
+  FileText,
+  Image as ImageIcon,
+  ExternalLink
 } from 'lucide-react';
 import { generatePDF } from '../../utils/pdfGenerator';
 
@@ -38,7 +40,6 @@ const ChallanDetails: React.FC = () => {
         try {
           const { data } = await api.get(`/tenant/challan/${challan_no}`);
           const result = data?.challan || data;
-          // Check if result is the correct challan
           if (result && (result.challan_no === challan_no || result.challanNo === challan_no || result.challan_number === challan_no)) {
             setChallan(result);
             setLoading(false);
@@ -115,6 +116,15 @@ const ChallanDetails: React.FC = () => {
     accessories = [];
   }
 
+  // Handle images parsing robustly
+  let images = [];
+  try {
+    const rawImages = challan.images || challan.image_urls || challan.imageUrls || [];
+    images = typeof rawImages === 'string' ? JSON.parse(rawImages) : (Array.isArray(rawImages) ? rawImages : []);
+  } catch(e) {
+    images = [];
+  }
+
   // Normalize field names
   const cName = challan.customer_name || challan.customerName || 'N/A';
   const cPhone = challan.contact_number || challan.contactNumber || challan.phone || challan.contact || '';
@@ -125,6 +135,11 @@ const ChallanDetails: React.FC = () => {
   const cNo = challan.challan_no || challan.challanNo || challan.challan_number;
   const cDate = challan.date || challan.created_at || challan.createdAt || challan.timestamp;
   const cItems = Array.isArray(challan.items) ? challan.items : [];
+
+  const getImageUrl = (url: string) => {
+    if (url.startsWith('http')) return url;
+    return `${api.defaults.baseURL?.replace('/api', '')}/${url}`;
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
@@ -287,6 +302,35 @@ const ChallanDetails: React.FC = () => {
               )}
             </div>
           </div>
+
+          {images.length > 0 && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <ImageIcon size={14} />
+                Device Images
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {images.map((img: string, idx: number) => (
+                  <a
+                    key={idx}
+                    href={getImageUrl(img)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative aspect-square group overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 transition-colors"
+                  >
+                    <img
+                      src={getImageUrl(img)}
+                      alt={`Device ${idx + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <ExternalLink size={20} className="text-white" />
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {cItems.length > 0 && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
