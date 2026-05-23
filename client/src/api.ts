@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // baseURL: 'https://api.automan.solutions/api',
-  baseURL: 'http://127.0.0.1:6001/api',
+  baseURL: 'https://api.automan.solutions/api',
+  // baseURL: 'http://127.0.0.1:6001/api',
 
 });
 
