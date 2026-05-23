@@ -4,17 +4,16 @@ import api from '../../api';
 import {
   ArrowLeft,
   Download,
-  FileText,
   User,
   Phone,
   Mail,
   Cpu,
   CheckSquare,
-  Clock,
-  CheckCircle2,
   AlertCircle,
   Calendar,
-  Hash
+  Hash,
+  MapPin,
+  FileText
 } from 'lucide-react';
 import { generatePDF } from '../../utils/pdfGenerator';
 
@@ -25,11 +24,38 @@ const ChallanDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const formatDate = (dateString: any) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleString();
+  };
+
   useEffect(() => {
     const fetchChallan = async () => {
       try {
+        setLoading(true);
+        // Try to get single challan first
+        try {
+          const { data } = await api.get(`/tenant/challan/${challan_no}`);
+          const result = data?.challan || data;
+          // Check if result is the correct challan
+          if (result && (result.challan_no === challan_no || result.challanNo === challan_no || result.challan_number === challan_no)) {
+            setChallan(result);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('Single challan fetch failed, falling back to list');
+        }
+
         const { data } = await api.get('/tenant/challans');
-        const found = data.find((c: any) => c.challan_no === challan_no);
+        const list = Array.isArray(data) ? data : (data?.challans || []);
+        const found = list.find((c: any) =>
+          c.challan_no === challan_no ||
+          c.challanNo === challan_no ||
+          c.challan_number === challan_no
+        );
+
         if (found) {
           setChallan(found);
         } else {
@@ -79,7 +105,26 @@ const ChallanDetails: React.FC = () => {
     );
   }
 
-  const accessories = typeof challan.accessories === 'string' ? JSON.parse(challan.accessories) : (challan.accessories || []);
+  // Handle accessories parsing robustly
+  let accessories = [];
+  try {
+    const rawAcc = challan.accessories || challan.receivedAccessories || challan.received_accessories;
+    accessories = typeof rawAcc === 'string' ? JSON.parse(rawAcc) : (rawAcc || []);
+    if (!Array.isArray(accessories)) accessories = [];
+  } catch(e) {
+    accessories = [];
+  }
+
+  // Normalize field names
+  const cName = challan.customer_name || challan.customerName || 'N/A';
+  const cPhone = challan.contact_number || challan.contactNumber || challan.phone || challan.contact || '';
+  const cEmail = challan.email || challan.emailAddress || challan.email_address || '';
+  const cSerial = challan.serial_number || challan.serialNumber || challan.modelNumber || 'N/A';
+  const cProblem = challan.problem || challan.problemDescription || 'N/A';
+  const cStatus = (challan.status || 'pending').toLowerCase();
+  const cNo = challan.challan_no || challan.challanNo || challan.challan_number;
+  const cDate = challan.date || challan.created_at || challan.createdAt || challan.timestamp;
+  const cItems = Array.isArray(challan.items) ? challan.items : [];
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
@@ -94,18 +139,18 @@ const ChallanDetails: React.FC = () => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-white">Challan Details</h1>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                challan.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-400' :
-                challan.status === 'pending' ? 'bg-amber-500/10 text-amber-400' :
-                challan.status === 'cancelled' ? 'bg-red-500/10 text-red-400' :
-                'bg-zinc-800 text-zinc-500'
+              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                cStatus === 'delivered' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                cStatus === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                cStatus === 'cancelled' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                'bg-zinc-800 text-zinc-500 border-zinc-700'
               }`}>
-                {challan.status}
+                {cStatus}
               </span>
             </div>
             <p className="text-zinc-500 flex items-center gap-2 mt-1">
               <Hash size={14} />
-              <span className="font-mono">{challan.challan_no}</span>
+              <span className="font-mono">{cNo}</span>
             </p>
           </div>
         </div>
@@ -119,7 +164,7 @@ const ChallanDetails: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Customer Information */}
+        {/* Left Column: Customer & Timeline */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -130,14 +175,14 @@ const ChallanDetails: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Customer Name</label>
-                <p className="text-white font-medium">{challan.customer_name}</p>
+                <p className="text-white font-medium">{cName}</p>
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">Contact Number</label>
                 <div className="flex items-center gap-2 text-white">
                   <Phone size={14} className="text-zinc-600" />
-                  <p>{challan.contact_number}</p>
+                  <p>{cPhone || <span className="text-zinc-600 italic">Not provided</span>}</p>
                 </div>
               </div>
 
@@ -145,14 +190,17 @@ const ChallanDetails: React.FC = () => {
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">Email Address</label>
                 <div className="flex items-center gap-2 text-white">
                   <Mail size={14} className="text-zinc-600" />
-                  <p className="break-all">{challan.email}</p>
+                  <p className="break-all">{cEmail || <span className="text-zinc-600 italic">Not provided</span>}</p>
                 </div>
               </div>
 
-              {challan.city && (
+              {(challan.city || challan.location) && (
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">City</label>
-                  <p className="text-white">{challan.city}</p>
+                  <div className="flex items-center gap-2 text-white">
+                    <MapPin size={14} className="text-zinc-600" />
+                    <p>{challan.city || challan.location}</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -170,10 +218,10 @@ const ChallanDetails: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">Challan Created</p>
-                  <p className="text-xs text-zinc-500">{new Date(challan.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-zinc-500">{formatDate(cDate)}</p>
                 </div>
               </div>
-              {challan.status === 'delivered' && (
+              {cStatus === 'delivered' && (
                 <div className="flex gap-3">
                   <div className="mt-1">
                     <div className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -188,7 +236,7 @@ const ChallanDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Device & Problem Details */}
+        {/* Right Column: Device & Problem Details */}
         <div className="md:col-span-2 space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
             <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -200,23 +248,23 @@ const ChallanDetails: React.FC = () => {
               <div>
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">Serial / Model Number</label>
                 <p className="text-white font-mono bg-zinc-950 border border-zinc-800 px-3 py-2 rounded-lg inline-block">
-                  {challan.serial_number}
+                  {cSerial}
                 </p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">Warranty Status</label>
-                <p className="text-white">{challan.warranty || 'None'}</p>
+                <p className="text-white font-medium">{challan.warranty || 'None'}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1 text-zinc-500">Dispatch Method</label>
-                <p className="text-white">{challan.dispatch_through || 'Self Pickup'}</p>
+                <p className="text-white font-medium">{challan.dispatch_through || 'Self Pickup'}</p>
               </div>
             </div>
 
             <div className="pt-4 border-t border-zinc-800">
               <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2 text-zinc-500">Problem Description</label>
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-300 whitespace-pre-wrap">
-                {challan.problem}
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                {cProblem}
               </div>
             </div>
           </div>
@@ -230,7 +278,7 @@ const ChallanDetails: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               {accessories.length > 0 ? (
                 accessories.map((acc: string, i: number) => (
-                  <span key={i} className="px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-400">
+                  <span key={i} className="px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-300">
                     {acc}
                   </span>
                 ))
@@ -239,6 +287,33 @@ const ChallanDetails: React.FC = () => {
               )}
             </div>
           </div>
+
+          {cItems.length > 0 && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6">
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <FileText size={14} />
+                Item List
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-xs text-zinc-500 uppercase tracking-wider">
+                      <th className="pb-3 pr-4 font-semibold">Description</th>
+                      <th className="pb-3 font-semibold text-right">Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {cItems.map((item: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="py-3 pr-4 text-sm text-zinc-300">{item.description}</td>
+                        <td className="py-3 text-sm text-zinc-300 text-right">{item.quantity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
