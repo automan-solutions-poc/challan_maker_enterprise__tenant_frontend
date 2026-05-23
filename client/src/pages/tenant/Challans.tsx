@@ -331,7 +331,7 @@ const TenantChallans: React.FC = () => {
                     {new Date(challan.date || challan.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1">
                       {challan.status === 'pending' && (
                         <button 
                           onClick={() => handleSendOTP(challan.challan_no)}
