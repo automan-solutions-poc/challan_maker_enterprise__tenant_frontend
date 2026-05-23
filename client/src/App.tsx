@@ -15,6 +15,7 @@ import TenantLogin from './pages/tenant/Login';
 import TenantDashboard from './pages/tenant/Dashboard';
 import CreateChallan from './pages/tenant/CreateChallan';
 import TenantChallans from './pages/tenant/Challans';
+import ChallanDetails from './pages/tenant/ChallanDetails';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { role } = useAuth();
@@ -93,6 +94,7 @@ const AppRoutes = () => {
             <Route path="/dashboard" element={<TenantDashboard />} />
             <Route path="/challans" element={<TenantChallans />} />
             <Route path="/challans/new" element={<CreateChallan />} />
+            <Route path="/challans/:challan_no" element={<ChallanDetails />} />
             <Route path="/users" element={<div className="p-8 text-zinc-500">Staff Management coming soon...</div>} />
             <Route path="/settings" element={<TenantSettings />} />
             <Route path="/terms" element={<TermsConditions />} />

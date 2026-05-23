@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api';
 import { 
   FileText, 
@@ -94,7 +95,9 @@ const TenantDashboard: React.FC = () => {
               {challans.slice(0, 5).map((challan) => (
                 <tr key={challan.id} className="hover:bg-zinc-800/30 transition-colors">
                   <td className="px-6 py-4">
-                    <span className="text-sm font-mono text-blue-400 font-medium">{challan.challan_no}</span>
+                    <Link to={`/challans/${challan.challan_no}`} className="text-sm font-mono text-blue-400 font-medium hover:underline">
+                      {challan.challan_no}
+                    </Link>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-0.5">
@@ -122,9 +125,12 @@ const TenantDashboard: React.FC = () => {
                     {new Date(challan.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-xs font-semibold text-blue-500 hover:text-blue-400 transition-colors">
+                    <Link
+                      to={`/challans/${challan.challan_no}`}
+                      className="text-xs font-semibold text-blue-500 hover:text-blue-400 transition-colors"
+                    >
                       View Details
-                    </button>
+                    </Link>
                   </td>
                 </tr>
               ))}
