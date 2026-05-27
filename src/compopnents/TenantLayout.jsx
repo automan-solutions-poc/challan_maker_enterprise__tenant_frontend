@@ -1,14 +1,13 @@
 // src/compopnents/TenantLayout.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Nav, Button } from "react-bootstrap";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
   PlusCircle,
   Palette,
   Mail,
-  ScrollText,
   LogOut,
   Menu,
 } from "lucide-react";
@@ -17,8 +16,14 @@ import "./TenantLayout.css";
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
   const tenant = JSON.parse(localStorage.getItem("tenant_info") || "null");
+
+  // Close sidebar on route change (for mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const logout = () => {
     localStorage.removeItem("tenant_token");
@@ -43,11 +48,11 @@ export default function TenantLayout() {
       >
         <div>
           {/* Company Header */}
-          <div className="tenant-header text-center py-4 border-bottom border-secondary">
-            <div className="tenant-logo mx-auto mb-2">
+          <div className="tenant-header">
+            <div className="tenant-logo">
               {tenant?.name?.[0]?.toUpperCase() || user?.tenant_name?.[0] || "T"}
             </div>
-            <h5 className="tenant-name mb-0">{tenant?.name || user?.tenant_name}</h5>
+            <h5 className="tenant-name">{tenant?.name || user?.tenant_name}</h5>
           </div>
 
           <Nav className="tenant-nav flex-column">
