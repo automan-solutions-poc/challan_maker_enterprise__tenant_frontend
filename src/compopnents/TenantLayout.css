@@ -64,7 +64,6 @@
   margin-bottom: 6px;
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.2s ease-in-out;
 }
 
 .tenant-link:hover {
@@ -90,7 +89,6 @@
   border-radius: 8px;
   font-weight: 500;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  transition: all 0.2s ease-in-out;
   background-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -158,3 +156,4 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
 }
+
