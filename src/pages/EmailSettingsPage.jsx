@@ -61,8 +61,8 @@ export default function EmailSettingsPage() {
   if (loading) {
     return (
       <div
-        className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light"
-        style={{ zIndex: 10 }}
+        className="d-flex flex-column justify-content-center align-items-center bg-light"
+        style={{ zIndex: 10, minHeight: "300px" }}
       >
         <Spinner animation="border" variant="primary" />
         <div className="mt-3 text-muted fw-semibold">

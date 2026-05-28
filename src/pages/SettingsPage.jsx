@@ -85,7 +85,7 @@ export default function SettingsPage() {
   // ✅ Show loading overlay while fetching data
   if (loading) {
     return (
-      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
+      <div className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "300px" }}>
         <Spinner animation="border" variant="primary" />
         <div className="mt-3 text-muted fw-semibold">Loading settings...</div>
       </div>

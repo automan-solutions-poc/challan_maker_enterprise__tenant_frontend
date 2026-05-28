@@ -10,6 +10,9 @@
 /* 🧭 Sidebar */
 .tenant-sidebar {
   width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  flex-shrink: 0;
   background-color: #1e1f24;
   color: #e9ecef;
   display: flex;
@@ -17,14 +20,16 @@
   justify-content: space-between;
   box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
 }
 
 /* 🪟 Header section */
 .tenant-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 1.2rem 1.5rem;
+  padding: 1.5rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -47,6 +52,11 @@
   font-weight: 600;
   margin: 0;
   color: #f8f9fa;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 🧭 Nav links */
@@ -64,6 +74,10 @@
   margin-bottom: 6px;
   font-weight: 500;
   text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tenant-link:hover {
