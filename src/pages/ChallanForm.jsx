@@ -144,20 +144,10 @@ export default function ChallanForm({ editMode = false }) {
     <div className="container-fluid p-4 position-relative">
       {/* 🔄 Overlay loader for submission */}
       {loading && (
-        <div
-          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
-          style={{
-            background: "rgba(0,0,0,0.2)",
-            backdropFilter: "blur(4px)",
-            zIndex: 10,
-            borderRadius: "16px"
-          }}
-        >
-          <Spinner animation="border" variant="primary" />
-          <div className="mt-2 fw-semibold">
-            {editMode ? "Updating challan..." : "Creating challan..."}
-          </div>
-        </div>
+        <Loader
+          text={editMode ? "Updating challan..." : "Creating challan..."}
+          overlay
+        />
       )}
 
       <div className="d-flex justify-content-between align-items-center mb-4">

@@ -27,6 +27,7 @@ import {
   Gear,
 } from "react-bootstrap-icons";
 import { Trash } from "lucide-react";
+import Loader from "../components/Loader";
 import "./ChallansPage.css";
 
 export default function ChallansPage() {
@@ -362,26 +363,13 @@ const fetchChallans = async () => {
 
   // 🌀 Loader
   if (loading) {
-    return (
-      <div className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light">
-        <Spinner animation="border" variant="primary" />
-        <div className="mt-2 text-muted fw-semibold">Loading challans...</div>
-      </div>
-    );
+    return <Loader text="Loading challans..." fullscreen />;
   }
 
   return (
     <div className="position-relative">
       {/* Overlay loader for actions */}
-      {processing && (
-        <div
-          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light bg-opacity-75"
-          style={{ zIndex: 10 }}
-        >
-          <Spinner animation="border" variant="primary" />
-          <div className="mt-2 text-muted fw-semibold">Processing, please wait...</div>
-        </div>
-      )}
+      {processing && <Loader text="Processing, please wait..." overlay />}
 
       <div className="mb-4">
         <h3 className="fw-bold mb-1">Challan Management</h3>
