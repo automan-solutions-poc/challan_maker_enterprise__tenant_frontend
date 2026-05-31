@@ -22,11 +22,11 @@ import {
   QrCode,
   PencilSquare,
   Envelope,
-  Trash,
   Send,
   ShieldLock,
   Gear,
 } from "react-bootstrap-icons";
+import { Trash } from "lucide-react";
 import "./ChallansPage.css";
 
 export default function ChallansPage() {
@@ -381,11 +381,15 @@ const fetchChallans = async () => {
         </div>
       )}
 
-      <h3>🧾 Challans</h3>
-      {msg && <Alert variant={msg.startsWith("✅") ? "success" : "danger"}>{msg}</Alert>}
+      <div className="mb-4">
+        <h3 className="fw-bold mb-1">Challan Management</h3>
+        <p className="text-muted small">View, search and manage all customer challans.</p>
+      </div>
+
+      {msg && <Alert variant={msg.startsWith("✅") ? "success" : "danger"} className="border-0 shadow-sm">{msg}</Alert>}
 
       {/* Filter Card */}
-      <Card className="p-3 mb-3 shadow-sm challans-filter-card">
+      <Card className="p-4 mb-4 border-0 shadow-sm">
         <Row className="align-items-end">
           <Col md={3}>
             <Form.Group>
@@ -423,33 +427,35 @@ const fetchChallans = async () => {
             </Form.Group>
           </Col>
 
-          <Col md={3} className="text-end">
-            <Button variant="primary" className="me-2" onClick={applyFilters}>
-              Apply
-            </Button>
-            <Button variant="secondary" onClick={resetFilters}>
+          <Col md={3} className="text-end d-flex gap-2 justify-content-end">
+            <Button variant="outline-primary" className="px-4" onClick={resetFilters} style={{ borderRadius: '10px' }}>
               Reset
+            </Button>
+            <Button variant="primary" className="px-4" onClick={applyFilters} style={{ borderRadius: '10px' }}>
+              Filter
             </Button>
           </Col>
         </Row>
       </Card>
 
       {/* Top bar with Create & Bulk actions */}
-      <div className="d-flex justify-content-between align-items-center mb-3 challans-actions-bar">
-        <div>
-          <Button onClick={() => navigate("/app/challan/new")} variant="primary" className="me-2">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="d-flex gap-2">
+          <Button onClick={() => navigate("/app/challan/new")} className="btn-gradient">
             + Create Challan
           </Button>
 
           {/* Bulk delete UI */}
-          {canBulkDelete() && (
+          {canBulkDelete() && selectedSet.size > 0 && (
             <>
               <Button
-                variant="danger"
-                disabled={selectedSet.size === 0 || processing}
+                variant="outline-danger"
+                className="d-flex align-items-center gap-2"
+                style={{ borderRadius: '12px' }}
+                disabled={processing}
                 onClick={() => setConfirmBulkDelete(true)}
               >
-                🗑️ Delete Selected ({selectedSet.size})
+                <Trash size={18} /> Delete Selected ({selectedSet.size})
               </Button>
             </>
           )}
@@ -509,9 +515,9 @@ const fetchChallans = async () => {
                   <td>{c.problem}</td>
                   <td>
                     {c.status === "delivered" ? (
-                      <Badge bg="success">Delivered</Badge>
+                      <Badge className="badge-gradient-success px-3 py-2 rounded-pill">Delivered</Badge>
                     ) : (
-                      <Badge bg="warning" text="dark">
+                      <Badge className="badge-gradient-warning px-3 py-2 rounded-pill">
                         Pending
                       </Badge>
                     )}

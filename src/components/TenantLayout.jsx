@@ -11,6 +11,7 @@ import {
   Menu,
   Sun,
   Moon,
+  Zap,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./TenantLayout.css";
@@ -20,7 +21,6 @@ export default function TenantLayout() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
-  const tenant = JSON.parse(localStorage.getItem("tenant_info") || "null");
 
   const logout = () => {
     localStorage.removeItem("tenant_token");
@@ -43,13 +43,13 @@ export default function TenantLayout() {
       >
         <div className="d-flex flex-column h-100">
           {/* Company Header */}
-          <div className="tenant-header">
-            <div className="tenant-logo">
-              {tenant?.name?.[0]?.toUpperCase() || user?.tenant_name?.[0] || "T"}
+          <div className="tenant-header px-4 py-4 d-flex align-items-center gap-3">
+            <div className="tenant-logo d-flex align-items-center justify-content-center shadow-sm">
+              <Zap size={20} fill="currentColor" />
             </div>
-            <div>
-              <h6 className="tenant-name">{tenant?.name || user?.tenant_name}</h6>
-              <small className="text-muted" style={{ fontSize: '10px' }}>ENTERPRISE EDITION</small>
+            <div className="overflow-hidden">
+              <h5 className="tenant-name mb-0 fw-bold">InfiChallan</h5>
+              <small className="text-muted text-uppercase tracking-wider" style={{ fontSize: '9px', fontWeight: '700' }}>Enterprise Edition</small>
             </div>
           </div>
 
@@ -115,22 +115,29 @@ export default function TenantLayout() {
             )}
           </Nav>
 
-          <div className="tenant-footer">
-            <Button
-              variant="link"
-              className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start gap-3 p-2 mb-2"
-              onClick={toggleTheme}
-            >
-              {theme === "light" ? (
-                <><Moon size={18} /> <span>Dark Mode</span></>
-              ) : (
-                <><Sun size={18} /> <span>Light Mode</span></>
-              )}
-            </Button>
+          <div className="tenant-footer p-3">
+            <div className="mb-3 px-2">
+              <div className="d-flex align-items-center gap-2 mb-3">
+                 <div className="bg-primary rounded-circle" style={{ width: '8px', height: '8px' }}></div>
+                 <small className="text-muted fw-semibold">Logged in as {user?.name || 'User'}</small>
+              </div>
+              <Button
+                variant="link"
+                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start gap-3 p-2 text-decoration-none"
+                onClick={toggleTheme}
+              >
+                {theme === "light" ? (
+                  <><Moon size={18} /> <span>Dark Mode</span></>
+                ) : (
+                  <><Sun size={18} /> <span>Light Mode</span></>
+                )}
+              </Button>
+            </div>
             <Button
               variant="outline-danger"
-              className="logout-btn w-100 d-flex align-items-center justify-content-center gap-2"
+              className="logout-btn w-100 d-flex align-items-center justify-content-center gap-2 py-2"
               onClick={logout}
+              style={{ borderRadius: '12px' }}
             >
               <LogOut size={16} />
               Logout

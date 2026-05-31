@@ -3,7 +3,6 @@ import { Card, Row, Col, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { FileText, Clock, CheckCircle, Plus } from "lucide-react";
 import API from "../api";
-import Loader from "../components/Loader";
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
@@ -55,12 +54,13 @@ export default function TenantDashboard() {
   return (
     <div className="dashboard-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold mb-0">Dashboard Overview</h3>
+        <div>
+          <h3 className="fw-bold mb-1">Dashboard</h3>
+          <p className="text-muted small">Welcome back! Here's what's happening today.</p>
+        </div>
         <Button
           onClick={() => navigate("/app/challan/new")}
-          variant="primary"
-          className="d-flex align-items-center gap-2 shadow-sm px-4 py-2"
-          style={{ borderRadius: '12px', fontWeight: '600' }}
+          className="btn-gradient d-flex align-items-center gap-2"
         >
           <Plus size={20} /> Create New
         </Button>
@@ -90,16 +90,18 @@ export default function TenantDashboard() {
               />
               <div className="d-flex align-items-center mb-3">
                 <div
-                  className="rounded-3 p-3 me-3 d-flex align-items-center justify-content-center"
+                  className="rounded-4 p-3 me-3 d-flex align-items-center justify-content-center"
                   style={{
                     background: card.gradient,
                     color: 'white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
                   }}
                 >
                   {card.icon}
                 </div>
-                <h6 className="text-muted fw-bold mb-0">{card.title}</h6>
+                <div>
+                  <h6 className="text-muted fw-bold mb-0" style={{ fontSize: '0.8rem', letterSpacing: '0.02rem' }}>{card.title.toUpperCase()}</h6>
+                </div>
               </div>
               <div className="display-5 fw-bold">{card.value}</div>
               <div className="mt-2">

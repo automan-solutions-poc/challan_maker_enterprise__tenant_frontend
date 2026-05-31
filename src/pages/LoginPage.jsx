@@ -11,7 +11,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { Lock, Mail, LogIn } from "lucide-react";
+import { Zap, Mail, LogIn, Lock } from "lucide-react";
 import "./LoginPage.css";
 
 export default function LoginPage() {
@@ -56,14 +56,14 @@ export default function LoginPage() {
         <Row className="justify-content-center w-100">
           <Col md={4} sm={8}>
             <Card className="login-card shadow-lg border-0">
-              <Card.Body>
-                <div className="text-center mb-4">
-                  <div className="login-logo mx-auto mb-3">
-                    <Lock size={28} />
+              <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-5">
+                  <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <Zap size={32} fill="currentColor" />
                   </div>
-                  <h3 className="fw-semibold">Tenant Login</h3>
-                  <p className="text-muted small mb-0">
-                    Sign in to manage your service center
+                  <h2 className="fw-bold brand-text mb-1">InfiChallan</h2>
+                  <p className="text-muted small text-uppercase tracking-wider">
+                    Enterprise Edition
                   </p>
                 </div>
 
@@ -100,7 +100,7 @@ export default function LoginPage() {
 
                   <Button
                     type="submit"
-                    className="w-100 login-btn"
+                    className="w-100 login-btn py-2 fw-bold mt-3"
                     disabled={loading}
                   >
                     {loading ? (

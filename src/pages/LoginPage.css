@@ -1,7 +1,7 @@
 /* 🌈 Background */
 .login-page {
   height: 100vh;
-  background: linear-gradient(135deg, #e9f0ff 0%, #f7f9fc 100%);
+  background: var(--bg-main);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,9 +10,9 @@
 
 /* 💳 Card */
 .login-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 2rem 1.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
   transition: all 0.3s ease;
 }
 
@@ -23,14 +23,22 @@
 
 /* 🔒 Logo icon */
 .login-logo {
-  width: 60px;
-  height: 60px;
-  background-color: #0d6efd;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  background: var(--primary-gradient);
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+.brand-text {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
 }
 
 /* ✍️ Input Icons */
@@ -52,18 +60,17 @@
 
 /* 🔘 Login button */
 .login-btn {
-  background-color: #0d6efd;
+  background: var(--primary-gradient);
   border: none;
-  border-radius: 8px;
-  padding: 0.6rem 0;
-  font-weight: 500;
+  border-radius: 12px;
   letter-spacing: 0.3px;
   transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .login-btn:hover {
-  background-color: #0b5ed7;
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
 /* 💻 Responsive adjustments */

@@ -24,14 +24,14 @@
 }
 
 [data-bs-theme='dark'] {
-  --bg-main: #0f172a;
-  --bg-card: #1e293b;
-  --text-main: #f1f5f9;
+  --bg-main: #0b1120;
+  --bg-card: #111827;
+  --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --border-color: #334155;
-  --sidebar-bg: #1e293b;
+  --border-color: #1e293b;
+  --sidebar-bg: #0f172a;
   --sidebar-text: #94a3b8;
-  --sidebar-active-bg: #334155;
+  --sidebar-active-bg: #1e293b;
   --sidebar-active-text: #818cf8;
 }
 
@@ -51,7 +51,8 @@ body {
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 .text-muted {
@@ -82,3 +83,23 @@ body {
   padding: 2rem;
   border: 1px solid var(--border-color);
 }
+
+.btn-gradient {
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  padding: 0.6rem 1.5rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
+}
+
+.badge-gradient-primary { background: var(--primary-gradient); color: white; }
+.badge-gradient-success { background: var(--success-gradient); color: white; }
+.badge-gradient-warning { background: var(--warning-gradient); color: white; }
