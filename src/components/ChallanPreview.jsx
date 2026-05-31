@@ -36,95 +36,94 @@ export default function ChallanPreview({ template = {}, data = {} }) {
         fontSize: 14,
         borderRadius: 8,
         background: "#fff",
+        color: "#333", // Ensure text is dark on white background
         boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
       }}
     >
       {/* Header */}
       <div style={{ borderTop: `6px solid ${theme}`, paddingTop: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-    {template.logo_url && (
-      <img
-        src={template.logo_url}
-        alt="Company Logo"
-        style={{
-          width: 60,
-          height: 60,
-          objectFit: "contain",
-          borderRadius: 8,
-          border: "1px solid #eee",
-          backgroundColor: "#fff",
-        }}
-      />
-    )}
-    <div>
-      <h4 style={{ margin: 0, color: theme }}>
-        {template.company_name || "Company Name"}
-      </h4>
-      {template.tagline && (
-        <div style={{ color: "#666", fontSize: 13 }}>
-          {template.tagline}
-        </div>
-      )}
-      {template.company_address && (
-        <div style={{ color: "#777", fontSize: 12 }}>
-          {template.company_address}
-        </div>
-      )}
-      {template.company_phone && (
-        <div style={{ color: "#777", fontSize: 12 }}>
-          📞 {template.company_phone}
-        </div>
-      )}
-      {template.company_email && (
-  <div style={{ color: "#777", fontSize: 12 }}>
-    ✉️ {template.company_email}
-  </div>
-)}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {template.logo_url && (
+              <img
+                src={template.logo_url}
+                alt="Company Logo"
+                style={{
+                  width: 60,
+                  height: 60,
+                  objectFit: "contain",
+                  borderRadius: 8,
+                  border: "1px solid #eee",
+                  backgroundColor: "#fff",
+                }}
+              />
+            )}
+            <div>
+              <h4 style={{ margin: 0, color: theme }}>
+                {template.company_name || "Company Name"}
+              </h4>
+              {template.tagline && (
+                <div style={{ color: "#555", fontSize: 13 }}>
+                  {template.tagline}
+                </div>
+              )}
+              {template.company_address && (
+                <div style={{ color: "#666", fontSize: 12 }}>
+                  {template.company_address}
+                </div>
+              )}
+              {template.company_phone && (
+                <div style={{ color: "#666", fontSize: 12 }}>
+                  📞 {template.company_phone}
+                </div>
+              )}
+              {template.company_email && (
+                <div style={{ color: "#666", fontSize: 12 }}>
+                  ✉️ {template.company_email}
+                </div>
+              )}
+            </div>
+          </div>
 
-    </div>
-  </div>
-
-  <div style={{ textAlign: "right" }}>
-    <div>
-      <strong>Challan No:</strong> {data.challan_no || "CH-XXXXX"}
-    </div>
-    <div>
-      <strong>Date:</strong>{" "}
-      {data.created_at
-        ? new Date(data.created_at).toLocaleString()
-        : new Date().toLocaleDateString()}
-    </div>
-  </div>
-</div>
-
+          <div style={{ textAlign: "right", color: "#333" }}>
+            <div>
+              <strong>Challan No:</strong> {data.challan_no || "CH-XXXXX"}
+            </div>
+            <div>
+              <strong>Date:</strong>{" "}
+              {data.created_at
+                ? new Date(data.created_at).toLocaleString()
+                : new Date().toLocaleDateString()}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <hr style={{ margin: "12px 0" }} />
+      <hr style={{ margin: "12px 0", borderColor: "#eee" }} />
 
       {/* Customer Info */}
-      <div>
+      <div style={{ color: "#333" }}>
         <div>
-          <strong>Customer:</strong> {data.customer_name || "John Doe"}
+          <strong style={{ color: "#555" }}>Customer:</strong> {data.customer_name || "John Doe"}
         </div>
         <div>
-          <strong>Email:</strong> {data.email || "example@email.com"}
+          <strong style={{ color: "#555" }}>Email:</strong> {data.email || "example@email.com"}
         </div>
         <div>
-          <strong>Contact:</strong> {data.contact_number || "9999999999"}
+          <strong style={{ color: "#555" }}>Contact:</strong> {data.contact_number || "9999999999"}
         </div>
         <div>
-          <strong>City:</strong> {data.city || "Nashik"}
+          <strong style={{ color: "#555" }}>City:</strong> {data.city || "Nashik"}
         </div>
         <div>
-          <strong>Serial Number:</strong> {data.serial_number || "SN-12345"}
+          <strong style={{ color: "#555" }}>Serial Number:</strong> {data.serial_number || "SN-12345"}
         </div>
       </div>
 
       {/* Item Details */}
       {items.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <h6 style={{ color: theme }}>Item Details</h6>
+          <h6 style={{ color: theme, fontWeight: "600" }}>Item Details</h6>
           <table
             style={{
               width: "100%",
@@ -137,7 +136,8 @@ export default function ChallanPreview({ template = {}, data = {} }) {
                 style={{
                   background: "#f8f9fa",
                   textAlign: "left",
-                  borderBottom: "2px solid #ddd",
+                  borderBottom: "2px solid #eee",
+                  color: "#555"
                 }}
               >
                 <th style={{ padding: 6 }}>#</th>
@@ -152,6 +152,7 @@ export default function ChallanPreview({ template = {}, data = {} }) {
                   style={{
                     borderBottom: "1px solid #eee",
                     fontSize: 13,
+                    color: "#333"
                   }}
                 >
                   <td style={{ padding: 6 }}>{idx + 1}</td>
@@ -165,34 +166,34 @@ export default function ChallanPreview({ template = {}, data = {} }) {
       )}
 
       {/* Accessories & Warranty */}
-      <div style={{ marginTop: 16 }}>
-        <h6 style={{ color: theme }}>Additional Info</h6>
+      <div style={{ marginTop: 16, color: "#333" }}>
+        <h6 style={{ color: theme, fontWeight: "600" }}>Additional Info</h6>
         <div>
-          <strong>Accessories:</strong> {accessories}
+          <strong style={{ color: "#555" }}>Accessories:</strong> {accessories}
         </div>
         <div>
-          <strong>Warranty:</strong> {data.warranty || "—"}
+          <strong style={{ color: "#555" }}>Warranty:</strong> {data.warranty || "—"}
         </div>
         <div>
-          <strong>Dispatch Through:</strong> {data.dispatch_through || "—"}
+          <strong style={{ color: "#555" }}>Dispatch Through:</strong> {data.dispatch_through || "—"}
         </div>
       </div>
 
       {/* Employee (Challan Given By) */}
       <div style={{ marginTop: 16 }}>
-        <strong>Challan Given By:</strong>
+        <strong style={{ color: "#555" }}>Challan Given By:</strong>
         <input
           type="text"
           value={loggedInUser || "Unknown"}
           disabled
           style={{
             marginLeft: 10,
-            border: "1px solid #ccc",
+            border: "1px solid #ddd",
             borderRadius: 4,
             padding: "4px 8px",
             fontSize: 13,
-            color: "#555",
-            backgroundColor: "#f5f5f5",
+            color: "#333",
+            backgroundColor: "#f9f9f9",
             width: "auto",
           }}
         />
@@ -200,7 +201,7 @@ export default function ChallanPreview({ template = {}, data = {} }) {
 
       {/* Problem */}
       <div style={{ marginTop: 16 }}>
-        <strong>Problem:</strong>
+        <strong style={{ color: "#555" }}>Problem:</strong>
         <div
           style={{
             border: "1px solid #eee",
@@ -208,21 +209,22 @@ export default function ChallanPreview({ template = {}, data = {} }) {
             padding: "6px 8px",
             background: "#fafafa",
             marginTop: 4,
+            color: "#333"
           }}
         >
           {data.problem || "Describe problem here..."}
         </div>
       </div>
-                <div
+      <div
         style={{
           marginTop: 20,
           textAlign: "left",
-          color: "#666",
+          color: "#777",
           fontSize: 13,
         }}
       >
         {terms_conditions_string.map((term, index) => (
-          <p key={index} style={{marginBottom: '4px'}}>{term}</p>
+          <p key={index} style={{ marginBottom: '4px' }}>{term}</p>
         ))}
       </div>
       {/* Footer */}
@@ -230,7 +232,7 @@ export default function ChallanPreview({ template = {}, data = {} }) {
         style={{
           marginTop: 20,
           textAlign: "center",
-          color: "#666",
+          color: "#777",
           fontSize: 13,
         }}
       >

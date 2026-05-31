@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Form, Button, Alert, Table, Spinner } from "react-bootstrap";
+import { Form, Button, Alert, Table, Spinner, Row, Col } from "react-bootstrap";
+import { Trash, Plus } from "lucide-react";
 import API from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 import ChallanPreview from "../components/ChallanPreview";
@@ -140,76 +141,115 @@ export default function ChallanForm({ editMode = false }) {
   }
 
   return (
-    <div className="p-3 position-relative">
+    <div className="container-fluid p-4 position-relative">
       {/* 🔄 Overlay loader for submission */}
       {loading && (
         <div
           className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
-          style={{ background: "rgba(255,255,255,0.7)", zIndex: 10 }}
+          style={{
+            background: "rgba(0,0,0,0.2)",
+            backdropFilter: "blur(4px)",
+            zIndex: 10,
+            borderRadius: "16px"
+          }}
         >
           <Spinner animation="border" variant="primary" />
-          <div className="mt-2 text-muted fw-semibold">
+          <div className="mt-2 fw-semibold">
             {editMode ? "Updating challan..." : "Creating challan..."}
           </div>
         </div>
       )}
 
-      <h3>{editMode ? "Edit Challan" : "Create Challan"}</h3>
-      {msg && <Alert variant={msg.includes("✅") ? "success" : "danger"}>{msg}</Alert>}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="fw-bold mb-0">{editMode ? "Edit Challan" : "Create New Challan"}</h3>
+        <div className="d-flex gap-2">
+          <Button variant="outline-secondary" onClick={() => navigate("/app/challans")} disabled={loading}>
+            Cancel
+          </Button>
+          <Button className="btn-gradient" onClick={submit} disabled={loading}>
+            {loading ? (
+              <><Spinner animation="border" size="sm" className="me-2" /> Saving...</>
+            ) : editMode ? (
+              "Update Challan"
+            ) : (
+              "Save Challan"
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {msg && (
+        <Alert variant={msg.includes("✅") ? "success" : "danger"} className="border-0 shadow-sm mb-4">
+          {msg}
+        </Alert>
+      )}
 
       <div className="challan-form-container">
         {/* LEFT SIDE: FORM */}
         <div className="challan-form-main">
           <Form onSubmit={submit}>
-            <div className="card p-3 mb-3 shadow-sm">
-              <Form.Group className="mb-2">
-                <Form.Label>M/s. (Customer)</Form.Label>
-                <Form.Control
-                  value={form.customer_name}
-                  onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </Form.Group>
+            <div className="card p-4 mb-4 border-0 shadow-sm">
+              <h5 className="mb-4 fw-bold text-primary">Customer Information</h5>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Customer Name / M/s.</Form.Label>
+                    <Form.Control
+                      value={form.customer_name}
+                      onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+                      required
+                      placeholder="Enter customer name"
+                      disabled={loading}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Email Address</Form.Label>
+                    <Form.Control
+                      type="email"
+                      placeholder="customer@example.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      required
+                      disabled={loading}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Contact Number</Form.Label>
+                    <Form.Control
+                      type="tel"
+                      value={form.contact_number}
+                      placeholder="e.g. 9876543210"
+                      onChange={(e) => setForm({ ...form, contact_number: e.target.value })}
+                      required
+                      disabled={loading}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">City</Form.Label>
+                    <Form.Control
+                      placeholder="Enter city"
+                      value={form.city}
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      required
+                      disabled={loading}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+            </div>
 
-              <Form.Group className="mb-2">
-                <Form.Label>Email</Form.Label>
+            <div className="card p-4 mb-4 border-0 shadow-sm">
+              <h5 className="mb-4 fw-bold text-primary">Device Details</h5>
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Serial Number / Asset Tag</Form.Label>
                 <Form.Control
-                  type="email"
-                  placeholder="example@mail.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-2">
-                <Form.Label>Contact Number</Form.Label>
-                <Form.Control
-                  type="number"
-                  value={form.contact_number}
-                  onChange={(e) => setForm({ ...form, contact_number: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-2">
-                <Form.Label>City</Form.Label>
-                <Form.Control
-                  placeholder="Enter city"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  required
-                  disabled={loading}
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-2">
-                <Form.Label>Serial Number</Form.Label>
-                <Form.Control
-                  placeholder="Enter Serial Number"
+                  placeholder="e.g. SN-987654321"
                   value={form.serial_number}
                   onChange={(e) => setForm({ ...form, serial_number: e.target.value })}
                   required
@@ -217,58 +257,78 @@ export default function ChallanForm({ editMode = false }) {
                 />
               </Form.Group>
 
-              <Table bordered size="sm" className="mt-3">
-                <thead>
-                  <tr>
-                    <th style={{ width: "8%" }}>No.</th>
-                    <th style={{ width: "70%" }}>Description</th>
-                    <th style={{ width: "10%" }}>Qty</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {form.items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td>{idx + 1}</td>
-                      <td>
-                        <Form.Control
-                          placeholder="Description"
-                          value={item.description}
-                          onChange={(e) => handleItemChange(idx, "description", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
-                      <td>
-                        <Form.Control
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
-                          disabled={loading}
-                        />
-                      </td>
+              <div className="table-responsive">
+                <Table className="align-middle">
+                  <thead className="bg-light">
+                    <tr>
+                      <th className="small fw-bold text-uppercase text-muted" style={{ width: "60px" }}>#</th>
+                      <th className="small fw-bold text-uppercase text-muted">Description / Component</th>
+                      <th className="small fw-bold text-uppercase text-muted" style={{ width: "120px" }}>Qty</th>
+                      <th style={{ width: "50px" }}></th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
+                  </thead>
+                  <tbody>
+                    {form.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="fw-bold text-muted">{idx + 1}</td>
+                        <td>
+                          <Form.Control
+                            placeholder="e.g. Replacement Display"
+                            value={item.description}
+                            className="border-0 bg-light"
+                            onChange={(e) => handleItemChange(idx, "description", e.target.value)}
+                            disabled={loading}
+                          />
+                        </td>
+                        <td>
+                          <Form.Control
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            className="border-0 bg-light"
+                            onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
+                            disabled={loading}
+                          />
+                        </td>
+                        <td>
+                          {form.items.length > 1 && (
+                            <Button
+                              variant="link"
+                              className="text-danger p-0"
+                              onClick={() => {
+                                const newItems = form.items.filter((_, i) => i !== idx);
+                                setForm({ ...form, items: newItems });
+                              }}
+                            >
+                              <Trash size={18} />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
 
-              <Button variant="secondary" size="sm" onClick={addItem} disabled={loading}>
-                + Add Row
+              <Button variant="outline-primary" size="sm" className="rounded-pill" onClick={addItem} disabled={loading}>
+                <Plus size={16} className="me-2" /> Add Item
               </Button>
 
-              <Form.Group className="mt-3">
-                <Form.Label>Problem</Form.Label>
+              <Form.Group className="mt-4">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Problem Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  placeholder="Describe problem..."
+                  placeholder="Detail the issue reported by the customer..."
                   value={form.problem}
+                  className="bg-light"
                   onChange={(e) => setForm({ ...form, problem: e.target.value })}
                   disabled={loading}
                 />
               </Form.Group>
 
               <Form.Group className="mt-3">
-                <Form.Label>Upload Product Images</Form.Label>
+                <Form.Label className="small fw-bold text-uppercase text-muted">Product Images</Form.Label>
                 <Form.Control
                   type="file"
                   multiple
@@ -276,57 +336,46 @@ export default function ChallanForm({ editMode = false }) {
                   onChange={handleFileChange}
                   disabled={loading}
                 />
+                <Form.Text className="text-muted">You can select multiple images to document device condition.</Form.Text>
               </Form.Group>
             </div>
 
-            <div className="card p-3 mb-3 shadow-sm">
-              <Form.Label>Accessories</Form.Label>
-              <div className="d-flex flex-wrap gap-2">
+            <div className="card p-4 mb-4 border-0 shadow-sm">
+              <h5 className="mb-4 fw-bold text-primary">Additional Options</h5>
+              <Form.Label className="small fw-bold text-uppercase text-muted mb-3">Accessories Received</Form.Label>
+              <div className="row g-3">
                 {[
-                  "Desktop",
-                  "Laptop",
-                  "SSD",
-                  "Adapter",
-                  "RAM",
-                  "Carry Case",
-                  "HDD",
-                  "Damage",
-                  "Mother Board",
-                  "Printer",
-                  "CPU",
-                  "Toner",
-                  "LCD / LED / IPS",
-                  "Head",
-                  "Keyboard or Mouse",
-                  "Speaker"
+                  "Desktop", "Laptop", "SSD", "Adapter", "RAM", "Carry Case",
+                  "HDD", "Damage", "Mother Board", "Printer", "CPU", "Toner",
+                  "LCD / LED / IPS", "Head", "Keyboard or Mouse", "Speaker"
                 ].map((acc) => (
-                  <Form.Check
-                    key={acc}
-                    inline
-                    label={acc}
-                    type="checkbox"
-                    checked={form.accessories.includes(acc)}
-                    onChange={() => toggleAccessory(acc)}
-                    disabled={loading}
-                  />
+                  <div key={acc} className="col-6 col-md-4 col-lg-3">
+                    <Form.Check
+                      id={`acc-${acc}`}
+                      label={acc}
+                      type="checkbox"
+                      className="small"
+                      checked={form.accessories.includes(acc)}
+                      onChange={() => toggleAccessory(acc)}
+                      disabled={loading}
+                    />
+                  </div>
                 ))}
               </div>
 
-              <Form.Group className="mt-3">
-                <Form.Label>Warranty</Form.Label>
-                <div className="d-flex flex-wrap gap-2">
+              <Form.Group className="mt-4">
+                <Form.Label className="small fw-bold text-uppercase text-muted mb-3">Warranty Status</Form.Label>
+                <div className="d-flex flex-wrap gap-4">
                   {[
-                    "Warranty",
-                    "No Warranty",
-                    "Chargeable",
-                    "Material Send to Customer",
+                    "Warranty", "No Warranty", "Chargeable", "Material Send to Customer"
                   ].map((opt) => (
                     <Form.Check
                       key={opt}
-                      inline
+                      id={`war-${opt}`}
                       label={opt}
                       type="radio"
                       name="warranty"
+                      className="small"
                       checked={form.warranty === opt}
                       onChange={() => handleWarrantyChange(opt)}
                       disabled={loading}
@@ -335,38 +384,24 @@ export default function ChallanForm({ editMode = false }) {
                 </div>
               </Form.Group>
 
-              <Form.Group className="mt-3">
-                <Form.Label>Material Dispatch Through</Form.Label>
+              <Form.Group className="mt-4">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Dispatch Method</Form.Label>
                 <Form.Control
-                  placeholder="Courier / Person"
+                  placeholder="e.g. Courier, Walk-in, Hand Delivery"
                   value={form.dispatch_through}
+                  className="bg-light"
                   onChange={(e) => setForm({ ...form, dispatch_through: e.target.value })}
                   disabled={loading}
                 />
               </Form.Group>
-
-              <div className="mt-3 text-end">
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Spinner animation="border" size="sm" className="me-2" />{" "}
-                      {editMode ? "Updating..." : "Creating..."}
-                    </>
-                  ) : editMode ? (
-                    "Update Challan"
-                  ) : (
-                    "Create Challan"
-                  )}
-                </Button>
-              </div>
             </div>
           </Form>
         </div>
 
         {/* RIGHT SIDE: PREVIEW */}
         <div className="challan-form-preview">
-          <div className="mt-4">
-            <h5>Live Preview</h5>
+          <div className="sticky-top" style={{ top: '2rem', zIndex: 1 }}>
+            <h6 className="small fw-bold text-uppercase text-muted mb-3">Live Preview</h6>
             <ChallanPreview
               template={template}
               data={{ ...form, challan_no: editMode ? challan_no : "AUTO" }}
