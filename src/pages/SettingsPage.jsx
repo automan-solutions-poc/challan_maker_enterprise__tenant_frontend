@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Form, Button, Alert, Image, Spinner } from "react-bootstrap";
+import { Row, Col, Form, Button, Alert, Image } from "react-bootstrap";
 import API from "../api";
 import ChallanPreview from "../components/ChallanPreview";
+import Loader from "../components/Loader";
 
 export default function SettingsPage() {
   const [template, setTemplate] = useState({
@@ -84,31 +85,13 @@ export default function SettingsPage() {
 
   // ✅ Show loading overlay while fetching data
   if (loading) {
-    return (
-      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
-        <Spinner animation="border" variant="primary" />
-        <div className="mt-3 text-muted fw-semibold">Loading settings...</div>
-      </div>
-    );
+    return <Loader text="Loading settings..." fullscreen />;
   }
 
   return (
     <div className="container-fluid p-4 position-relative">
       {/* Overlay while uploading/saving */}
-      {uploading && (
-        <div
-          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
-          style={{
-            background: "rgba(0,0,0,0.2)",
-            backdropFilter: "blur(4px)",
-            zIndex: 10,
-            borderRadius: "16px"
-          }}
-        >
-          <Spinner animation="border" variant="primary" />
-          <div className="mt-2 fw-semibold">Processing...</div>
-        </div>
-      )}
+      {uploading && <Loader text="Processing..." overlay />}
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold mb-0">Challan Design Settings</h3>

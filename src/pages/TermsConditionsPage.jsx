@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Form, Button, Alert, Spinner } from "react-bootstrap";
 import API from "../api";
+import Loader from "../components/Loader";
 
 export default function TermsConditionsPage() {
   const [terms, setTerms] = useState("");
@@ -41,7 +42,7 @@ export default function TermsConditionsPage() {
   };
 
   return (
-    <div>
+    <div className="position-relative">
       <h3>Terms & Conditions</h3>
       <Card className="p-3 shadow-sm">
         {msg && (
@@ -51,12 +52,10 @@ export default function TermsConditionsPage() {
         )}
 
         {loading ? (
-          <div className="d-flex align-items-center gap-2">
-            <Spinner animation="border" size="sm" />
-            <div>Loading...</div>
-          </div>
+          <Loader text="Loading terms..." />
         ) : (
           <Form onSubmit={save}>
+            {saving && <Loader text="Saving terms..." overlay />}
             <Form.Group className="mb-3">
               <Form.Label>Terms & Conditions (HTML allowed)</Form.Label>
               <Form.Control

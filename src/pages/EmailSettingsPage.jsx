@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../api";
 import { Form, Button, Alert, Card, Row, Col, Spinner } from "react-bootstrap";
+import Loader from "../components/Loader";
 
 export default function EmailSettingsPage() {
   const [form, setForm] = useState({
@@ -58,31 +59,13 @@ export default function EmailSettingsPage() {
     setForm({ ...form, [field]: !form[field] });
 
   // ✅ Show loader while fetching or saving
-  if (loading) {
-    return (
-      <div
-        className="d-flex flex-column justify-content-center align-items-center vh-100 bg-light"
-        style={{ zIndex: 10 }}
-      >
-        <Spinner animation="border" variant="primary" />
-        <div className="mt-3 text-muted fw-semibold">
-          {msg.includes("Saving") ? "Saving email settings..." : "Loading email settings..."}
-        </div>
-      </div>
-    );
+  if (loading && !form.sender_email) {
+    return <Loader text="Loading email settings..." fullscreen />;
   }
 
   return (
     <div className="container mt-4 position-relative">
-      {loading && (
-        <div
-          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center bg-light bg-opacity-75"
-          style={{ zIndex: 10 }}
-        >
-          <Spinner animation="border" variant="primary" />
-          <div className="mt-2 text-muted fw-semibold">Processing, please wait...</div>
-        </div>
-      )}
+      {loading && <Loader text="Saving email settings..." overlay />}
 
       <Card className="p-4 shadow-sm">
         <h3>📧 Challan Email Settings</h3>
