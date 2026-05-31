@@ -1,4 +1,3 @@
-// src/compopnents/TenantLayout.jsx
 import React, { useState } from "react";
 import { Container, Nav, Button } from "react-bootstrap";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
@@ -8,14 +7,17 @@ import {
   PlusCircle,
   Palette,
   Mail,
-  ScrollText,
   LogOut,
   Menu,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "../ThemeContext";
 import "./TenantLayout.css";
 
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
   const tenant = JSON.parse(localStorage.getItem("tenant_info") || "null");
@@ -30,31 +32,33 @@ export default function TenantLayout() {
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="tenant-layout d-flex">
+    <div className="tenant-layout">
       <button className="sidebar-toggle" onClick={toggleSidebar}>
         <Menu size={20} />
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`tenant-sidebar bg-dark text-white d-flex flex-column justify-content-between ${
-          isSidebarOpen ? "is-open" : ""
-        }`}
+        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""}`}
       >
-        <div>
+        <div className="d-flex flex-column h-100">
           {/* Company Header */}
-          <div className="tenant-header text-center py-4 border-bottom border-secondary">
-            <div className="tenant-logo mx-auto mb-2">
+          <div className="tenant-header">
+            <div className="tenant-logo">
               {tenant?.name?.[0]?.toUpperCase() || user?.tenant_name?.[0] || "T"}
             </div>
-            <h5 className="tenant-name mb-0">{tenant?.name || user?.tenant_name}</h5>
+            <div>
+              <h6 className="tenant-name">{tenant?.name || user?.tenant_name}</h6>
+              <small className="text-muted" style={{ fontSize: '10px' }}>ENTERPRISE EDITION</small>
+            </div>
           </div>
 
           <Nav className="tenant-nav flex-column">
             <Nav.Link
               as={NavLink}
               to="/app/dashboard"
-              className="tenant-link text-white"
+              className="tenant-link"
+              onClick={() => setSidebarOpen(false)}
             >
               <LayoutDashboard size={18} className="me-2" /> Dashboard
             </Nav.Link>
@@ -62,7 +66,8 @@ export default function TenantLayout() {
             <Nav.Link
               as={NavLink}
               to="/app/challans"
-              className="tenant-link text-white"
+              className="tenant-link"
+              onClick={() => setSidebarOpen(false)}
             >
               <FileText size={18} className="me-2" /> Challans
             </Nav.Link>
@@ -70,7 +75,8 @@ export default function TenantLayout() {
             <Nav.Link
               as={NavLink}
               to="/app/challan/new"
-              className="tenant-link text-white"
+              className="tenant-link"
+              onClick={() => setSidebarOpen(false)}
             >
               <PlusCircle size={18} className="me-2" /> New Challan
             </Nav.Link>
@@ -78,10 +84,12 @@ export default function TenantLayout() {
             {/* Admin-only links */}
             {user?.role === "tenant_admin" && (
               <>
+                <div className="nav-section-title mt-3 mb-1">ADMINISTRATION</div>
                 <Nav.Link
                   as={NavLink}
                   to="/app/settings"
-                  className="tenant-link text-white"
+                  className="tenant-link"
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <Palette size={18} className="me-2" /> Design Settings
                 </Nav.Link>
@@ -89,7 +97,8 @@ export default function TenantLayout() {
                 <Nav.Link
                   as={NavLink}
                   to="/app/email-settings"
-                  className="tenant-link text-white"
+                  className="tenant-link"
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <Mail size={18} className="me-2" /> Email Settings
                 </Nav.Link>
@@ -97,30 +106,41 @@ export default function TenantLayout() {
                 <Nav.Link
                   as={NavLink}
                   to="/app/terms"
-                  className="tenant-link text-white"
+                  className="tenant-link"
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <FileText size={18} className="me-2" /> Terms & Conditions
                 </Nav.Link>
               </>
             )}
           </Nav>
-        </div>
 
-        {/* Footer (Logout Button) */}
-        <div className="tenant-footer border-top border-secondary p-3">
-          <Button
-            variant="outline-light"
-            className="w-100 d-flex align-items-center justify-content-center gap-2"
-            onClick={logout}
-          >
-            <LogOut size={16} />
-            Logout
-          </Button>
+          <div className="tenant-footer">
+            <Button
+              variant="link"
+              className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start gap-3 p-2 mb-2"
+              onClick={toggleTheme}
+            >
+              {theme === "light" ? (
+                <><Moon size={18} /> <span>Dark Mode</span></>
+              ) : (
+                <><Sun size={18} /> <span>Light Mode</span></>
+              )}
+            </Button>
+            <Button
+              variant="outline-danger"
+              className="logout-btn w-100 d-flex align-items-center justify-content-center gap-2"
+              onClick={logout}
+            >
+              <LogOut size={16} />
+              Logout
+            </Button>
+          </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="tenant-content flex-grow-1 bg-light">
+      <main className="tenant-content">
         <Container fluid className="p-4">
           <Outlet />
         </Container>

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Form, Button, Alert, Table, Spinner } from "react-bootstrap";
 import API from "../api";
 import { useNavigate, useParams } from "react-router-dom";
-import ChallanPreview from "../compopnents/ChallanPreview";
-import Loader from "../compopnents/Loader";
+import ChallanPreview from "../components/ChallanPreview";
+import Loader from "../components/Loader";
 import "./ChallanForm.css";
 
 export default function ChallanForm({ editMode = false }) {

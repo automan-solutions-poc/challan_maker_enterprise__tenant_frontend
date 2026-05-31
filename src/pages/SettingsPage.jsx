@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Row, Col, Form, Button, Alert, Image, Spinner } from "react-bootstrap";
 import API from "../api";
-import ChallanPreview from "../compopnents/ChallanPreview";
+import ChallanPreview from "../components/ChallanPreview";
 
 export default function SettingsPage() {
   const [template, setTemplate] = useState({
