@@ -73,6 +73,28 @@
   box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
 }
 
+.login-theme-toggle {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  color: var(--text-main) !important;
+  padding: 0.75rem !important;
+  border-radius: 50% !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease !important;
+  box-shadow: var(--card-shadow);
+  z-index: 1000;
+}
+
+.login-theme-toggle:hover {
+  transform: rotate(15deg) scale(1.1);
+  background: var(--bg-main) !important;
+}
+
 /* 💻 Responsive adjustments */
 @media (max-width: 576px) {
   .login-card {
