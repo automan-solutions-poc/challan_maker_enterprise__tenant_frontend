@@ -11,10 +11,12 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { Zap, Mail, LogIn, Lock } from "lucide-react";
+import { Zap, Mail, LogIn, Lock, Sun, Moon } from "lucide-react";
+import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
 
 export default function LoginPage() {
+  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,13 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      <Button
+        variant="link"
+        className="login-theme-toggle"
+        onClick={toggleTheme}
+      >
+        {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
+      </Button>
       <Container fluid className="h-100 d-flex justify-content-center align-items-center">
         <Row className="justify-content-center w-100">
           <Col md={4} sm={8}>
