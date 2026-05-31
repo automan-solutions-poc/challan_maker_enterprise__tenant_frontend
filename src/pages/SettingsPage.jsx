@@ -93,150 +93,199 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="position-relative p-3">
+    <div className="container-fluid p-4 position-relative">
       {/* Overlay while uploading/saving */}
       {uploading && (
         <div
           className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
           style={{
-            background: "rgba(255,255,255,0.7)",
+            background: "rgba(0,0,0,0.2)",
+            backdropFilter: "blur(4px)",
             zIndex: 10,
+            borderRadius: "16px"
           }}
         >
           <Spinner animation="border" variant="primary" />
-          <div className="mt-2 text-muted fw-semibold">Processing...</div>
+          <div className="mt-2 fw-semibold">Processing...</div>
         </div>
       )}
 
-      <h3>Challan Design Settings</h3>
-      {msg && <Alert variant={msg.includes("✅") ? "success" : "danger"}>{msg}</Alert>}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="fw-bold mb-0">Challan Design Settings</h3>
+        <Button className="btn-gradient" onClick={save} disabled={uploading}>
+          Save Design
+        </Button>
+      </div>
 
-      <Row>
+      {msg && (
+        <Alert
+          variant={msg.includes("✅") ? "success" : "danger"}
+          className="border-0 shadow-sm mb-4"
+          onClose={() => setMsg("")}
+          dismissible
+        >
+          {msg}
+        </Alert>
+      )}
+
+      <Row className="g-4">
         {/* 🧾 Settings Form */}
-        <Col md={6}>
-          <Form>
-            <Form.Group className="mb-2">
-              <Form.Label>Company Name</Form.Label>
-              <Form.Control
-                value={template.company_name}
-                onChange={(e) => setTemplate({ ...template, company_name: e.target.value })}
-              />
-            </Form.Group>
+        <Col lg={7}>
+          <div className="card p-4 border-0 shadow-sm">
+            <Form>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Company Name</Form.Label>
+                    <Form.Control
+                      value={template.company_name}
+                      placeholder="e.g. InfiChallan Tech"
+                      onChange={(e) => setTemplate({ ...template, company_name: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Tagline</Form.Label>
+                    <Form.Control
+                      value={template.tagline}
+                      placeholder="e.g. Excellence in Service"
+                      onChange={(e) => setTemplate({ ...template, tagline: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Tagline</Form.Label>
-              <Form.Control
-                value={template.tagline}
-                onChange={(e) => setTemplate({ ...template, tagline: e.target.value })}
-              />
-            </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Address</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={template.company_address}
+                  placeholder="Complete office address"
+                  onChange={(e) => setTemplate({ ...template, company_address: e.target.value })}
+                />
+              </Form.Group>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Address</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                value={template.company_address}
-                onChange={(e) => setTemplate({ ...template, company_address: e.target.value })}
-              />
-            </Form.Group>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Contact Number</Form.Label>
+                    <Form.Control
+                      value={template.company_phone}
+                      placeholder="+91 98765 43210"
+                      onChange={(e) => setTemplate({ ...template, company_phone: e.target.value })}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Registered Email</Form.Label>
+                    <Form.Control
+                      type="email"
+                      value={template.company_email || "Not Available"}
+                      disabled
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Contact Number</Form.Label>
-              <Form.Control
-                value={template.company_phone}
-                onChange={(e) => setTemplate({ ...template, company_phone: e.target.value })}
-              />
-            </Form.Group>
+              <hr className="my-4 opacity-10" />
 
-          <Form.Group className="mb-2">
-  <Form.Label>Registered Email (Read Only)</Form.Label>
-  <Form.Control
-    type="email"
-    value={template.company_email || "Not Available"}
-    disabled
-  />
-</Form.Group>
-
-
-            <Form.Group className="mb-2">
-              <Form.Label>Upload Logo</Form.Label>
-              <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                disabled={uploading}
-              />
-              {template.logo_url && (
-                <div className="mt-2">
-                  <Image
-                    src={template.logo_url}
-                    alt="Logo"
-                    fluid
-                    thumbnail
-                    width={100}
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: 6,
-                      backgroundColor: "#fff",
-                      padding: 4,
-                    }}
+              <Form.Group className="mb-3">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Upload Logo</Form.Label>
+                <div className="d-flex align-items-center gap-3">
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={uploading}
+                    className="flex-grow-1"
                   />
+                  {template.logo_url && (
+                    <Image
+                      src={template.logo_url}
+                      alt="Logo"
+                      fluid
+                      width={60}
+                      className="rounded shadow-sm bg-white p-1"
+                      style={{ border: "1px solid var(--border-color)" }}
+                    />
+                  )}
                 </div>
-              )}
-            </Form.Group>
+              </Form.Group>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Theme Color</Form.Label>
-              <Form.Control
-                type="color"
-                value={template.theme_color}
-                onChange={(e) => setTemplate({ ...template, theme_color: e.target.value })}
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Theme Color</Form.Label>
+                    <div className="d-flex align-items-center gap-2">
+                      <Form.Control
+                        type="color"
+                        value={template.theme_color}
+                        className="form-control-color border-0 p-0"
+                        style={{ width: '40px', height: '40px' }}
+                        onChange={(e) => setTemplate({ ...template, theme_color: e.target.value })}
+                      />
+                      <span className="font-monospace small">{template.theme_color}</span>
+                    </div>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold text-uppercase text-muted">Font Family</Form.Label>
+                    <Form.Select
+                      value={template.font_family}
+                      onChange={(e) => setTemplate({ ...template, font_family: e.target.value })}
+                    >
+                      <option value="Inter, sans-serif">Inter (Default)</option>
+                      <option value="'Century Gothic', sans-serif">Century Gothic</option>
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Courier New', monospace">Courier New</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <Form.Check
+                className="mb-3 fw-semibold"
+                type="switch"
+                id="show-accessories"
+                label="Show Accessories Section"
+                checked={template.show_accessories}
+                onChange={(e) => setTemplate({ ...template, show_accessories: e.target.checked })}
               />
-            </Form.Group>
 
-            <Form.Group className="mb-2">
-              <Form.Label>Font Family</Form.Label>
-              <Form.Control
-                value={template.font_family}
-                onChange={(e) => setTemplate({ ...template, font_family: e.target.value })}
-              />
-            </Form.Group>
-
-            <Form.Check
-              className="mb-2"
-              type="checkbox"
-              label="Show Accessories"
-              checked={template.show_accessories}
-              onChange={(e) => setTemplate({ ...template, show_accessories: e.target.checked })}
-            />
-
-            <Form.Group className="mb-2">
-              <Form.Label>Footer Note</Form.Label>
-              <Form.Control
-                value={template.footer_note}
-                onChange={(e) => setTemplate({ ...template, footer_note: e.target.value })}
-              />
-            </Form.Group>
-
-            <Button variant="primary" onClick={save} disabled={uploading}>
-              Save Design
-            </Button>
-          </Form>
+              <Form.Group className="mb-0">
+                <Form.Label className="small fw-bold text-uppercase text-muted">Footer Note</Form.Label>
+                <Form.Control
+                  value={template.footer_note}
+                  placeholder="e.g. Dhanyawad!"
+                  onChange={(e) => setTemplate({ ...template, footer_note: e.target.value })}
+                />
+              </Form.Group>
+            </Form>
+          </div>
         </Col>
 
         {/* 🪄 Live Preview */}
-        <Col md={6}>
-          <h6>Live Preview</h6>
-          <ChallanPreview
-            template={template}
-            data={{
-              customer_name: "John Doe",
-              serial_number: "SN-12345",
-              problem: "No Power",
-              accessories: ["Charger", "Adapter"],
-            }}
-          />
+        <Col lg={5}>
+          <div className="sticky-top" style={{ top: '2rem', zIndex: 1 }}>
+            <h6 className="small fw-bold text-uppercase text-muted mb-3">Live Preview</h6>
+            <ChallanPreview
+              template={template}
+              data={{
+                customer_name: "John Doe",
+                serial_number: "SN-12345",
+                problem: "No Power / Water Damage",
+                accessories: ["Charger", "Laptop Bag", "Wireless Mouse"],
+              }}
+            />
+            <div className="mt-3 p-3 bg-light rounded small text-muted border">
+              <i className="bi bi-info-circle me-2"></i>
+              This is a real-time preview of how your printed challans will look.
+            </div>
+          </div>
         </Col>
       </Row>
     </div>
