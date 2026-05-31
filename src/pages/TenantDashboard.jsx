@@ -3,6 +3,7 @@ import { Card, Row, Col, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { FileText, Clock, CheckCircle, Plus } from "lucide-react";
 import API from "../api";
+import Loader from "../components/Loader";
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
