@@ -36,6 +36,7 @@ export default function ChallansPage() {
   const [processing, setProcessing] = useState(false);
   const [msg, setMsg] = useState("");
   const [qrPreview, setQrPreview] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
   const [otpModal, setOtpModal] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [selectedChallan, setSelectedChallan] = useState(null);
@@ -275,6 +276,7 @@ const fetchChallans = async () => {
   const handleViewQR = (qrUrl) => {
     if (!qrUrl) return alert("QR code not available.");
     const fullUrl = qrUrl.startsWith("http") ? qrUrl : `${base_url_for_img}${qrUrl}`;
+    setQrLoading(true);
     setQrPreview(fullUrl);
   };
 
@@ -593,18 +595,30 @@ const fetchChallans = async () => {
       </div>
 
       {/* QR Modal */}
-      <Modal show={!!qrPreview} onHide={() => setQrPreview(null)} centered size="sm">
+      <Modal show={!!qrPreview} onHide={() => { setQrPreview(null); setQrLoading(false); }} centered size="sm">
         <Modal.Header closeButton>
           <Modal.Title>QR Code</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center">
-          <Image src={qrPreview} alt="Challan QR Code" fluid style={{ maxWidth: 250 }} />
+        <Modal.Body className="text-center position-relative" style={{ minHeight: '200px' }}>
+          {qrLoading && (
+            <div className="position-absolute top-50 start-50 translate-middle">
+              <Spinner animation="border" variant="primary" />
+              <div className="mt-2 text-muted small">Loading QR...</div>
+            </div>
+          )}
+          <Image
+            src={qrPreview}
+            alt="Challan QR Code"
+            fluid
+            style={{ maxWidth: 250, display: qrLoading ? 'none' : 'block', margin: '0 auto' }}
+            onLoad={() => setQrLoading(false)}
+          />
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setQrPreview(null)}>
+          <Button variant="secondary" onClick={() => { setQrPreview(null); setQrLoading(false); }}>
             Close
           </Button>
-          <Button variant="primary" onClick={printQR} disabled={!qrPreview}>
+          <Button variant="primary" onClick={printQR} disabled={qrLoading || !qrPreview}>
             🖨️ Print QR
           </Button>
         </Modal.Footer>
