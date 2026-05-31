@@ -265,7 +265,7 @@ export default function ChallanForm({ editMode = false }) {
                           <Form.Control
                             placeholder="e.g. Replacement Display"
                             value={item.description}
-                            className="border-0 bg-light"
+                            className="border-0 bg-dark"
                             onChange={(e) => handleItemChange(idx, "description", e.target.value)}
                             disabled={loading}
                           />
@@ -275,7 +275,7 @@ export default function ChallanForm({ editMode = false }) {
                             type="number"
                             min="1"
                             value={item.quantity}
-                            className="border-0 bg-light"
+                            className="border-0 bg-dark"
                             onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
                             disabled={loading}
                           />
@@ -305,13 +305,13 @@ export default function ChallanForm({ editMode = false }) {
               </Button>
 
               <Form.Group className="mt-4">
-                <Form.Label className="small fw-bold text-uppercase text-muted">Problem Description</Form.Label>
+                <Form.Label className="small fw-bold text-uppercase text-muted ">Problem Description</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
                   placeholder="Detail the issue reported by the customer..."
                   value={form.problem}
-                  className="bg-light"
+                  className="bg-dark"
                   onChange={(e) => setForm({ ...form, problem: e.target.value })}
                   disabled={loading}
                 />
@@ -379,7 +379,7 @@ export default function ChallanForm({ editMode = false }) {
                 <Form.Control
                   placeholder="e.g. Courier, Walk-in, Hand Delivery"
                   value={form.dispatch_through}
-                  className="bg-light"
+                  className="bg-dark"
                   onChange={(e) => setForm({ ...form, dispatch_through: e.target.value })}
                   disabled={loading}
                 />
