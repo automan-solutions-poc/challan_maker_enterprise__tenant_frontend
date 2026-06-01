@@ -12,12 +12,15 @@ import {
   Sun,
   Moon,
   Zap,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./TenantLayout.css";
 
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
@@ -39,7 +42,7 @@ export default function TenantLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""}`}
+        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "is-collapsed" : ""}`}
       >
         <div className="d-flex flex-column h-100">
           {/* Company Header */}
@@ -147,7 +150,17 @@ export default function TenantLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="tenant-content">
+      <main className={`tenant-content ${isSidebarCollapsed ? "sidebar-collapsed" : ""}`}>
+        <div className="d-none d-md-block p-2 border-bottom bg-white d-flex align-items-center" style={{ height: '50px' }}>
+          <Button
+            variant="link"
+            className="text-muted p-0 ms-2"
+            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen size={22} /> : <PanelLeftClose size={22} />}
+          </Button>
+        </div>
         <Container fluid className="p-4">
           <Outlet />
         </Container>
