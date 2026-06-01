@@ -1,5 +1,6 @@
 // src/pages/ChallansPage.jsx
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import API from "../api";
 import {
   Table,
@@ -11,7 +12,6 @@ import {
   Form,
   Badge,
   Dropdown,
-  ButtonGroup,
   Row,
   Col,
   Card,
@@ -29,6 +29,23 @@ import {
 import { Trash } from "lucide-react";
 import Loader from "../components/Loader";
 import "./ChallansPage.css";
+
+const PortalMenu = React.forwardRef(
+  ({ children, style, className, "aria-labelledby": labeledBy, show }, ref) => {
+    if (!show) return null;
+    return ReactDOM.createPortal(
+      <div
+        ref={ref}
+        style={{ ...style, zIndex: 10000 }}
+        className={className}
+        aria-labelledby={labeledBy}
+      >
+        {children}
+      </div>,
+      document.body
+    );
+  }
+);
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
@@ -513,8 +530,8 @@ const fetchChallans = async () => {
                     )}
                   </td>
                   <td>{c.date}</td>
-                  <td className="text-center">
-                    <Dropdown as={ButtonGroup} align="end" autoClose="outside">
+                  <td className="text-end">
+                    <Dropdown align="end" autoClose="outside">
                       <Dropdown.Toggle
                         variant="outline-secondary"
                         size="sm"
@@ -525,9 +542,11 @@ const fetchChallans = async () => {
                       </Dropdown.Toggle>
 
                       <Dropdown.Menu
-                        container={document.body} // crucial fix for alignment/popover
-                        popperConfig={{ strategy: "fixed" }}
-                        style={{ minWidth: "180px", zIndex: 1050 }}
+                        as={PortalMenu}
+                        popperConfig={{
+                          strategy: "fixed",
+                        }}
+                        style={{ minWidth: "180px" }}
                       >
                         <Dropdown.Item onClick={() => handleDownloadPDF(c.pdf_url)}>
                           <FileEarmarkPdf className="me-2 text-danger" />
