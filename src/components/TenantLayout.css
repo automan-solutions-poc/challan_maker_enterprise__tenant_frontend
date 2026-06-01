@@ -47,9 +47,7 @@
     padding: 0.75rem 0;
 }
 
-.sidebar-icon {
-    margin-right: 0.75rem;
-}
+/* .sidebar-icon margin-right removed in favor of gap on parent */
 
 .tenant-sidebar.is-collapsed .sidebar-icon {
     margin-right: 0 !important;
@@ -69,10 +67,12 @@
 .tenant-sidebar.is-collapsed .theme-toggle-btn {
     justify-content: center !important;
     padding: 0.5rem 0 !important;
+    gap: 0 !important;
 }
 
 .tenant-sidebar.is-collapsed .logout-btn {
     padding: 0.5rem 0 !important;
+    gap: 0 !important;
 }
 
 .tenant-header {
@@ -126,6 +126,11 @@
   margin-bottom: 4px;
   font-weight: 500;
   transition: all 0.2s ease;
+  gap: 0.75rem;
+}
+
+.tenant-sidebar.is-collapsed .tenant-link {
+  gap: 0 !important;
 }
 
 .tenant-link:hover {

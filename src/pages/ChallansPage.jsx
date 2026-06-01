@@ -1,6 +1,5 @@
 // src/pages/ChallansPage.jsx
 import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
 import API from "../api";
 import {
   Table,
@@ -29,23 +28,6 @@ import {
 import { Trash } from "lucide-react";
 import Loader from "../components/Loader";
 import "./ChallansPage.css";
-
-const PortalMenu = React.forwardRef(
-  ({ children, style, className, "aria-labelledby": labeledBy, show }, ref) => {
-    if (!show) return null;
-    return ReactDOM.createPortal(
-      <div
-        ref={ref}
-        style={{ ...style, zIndex: 10000 }}
-        className={className}
-        aria-labelledby={labeledBy}
-      >
-        {children}
-      </div>,
-      document.body
-    );
-  }
-);
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
@@ -542,7 +524,6 @@ const fetchChallans = async () => {
                       </Dropdown.Toggle>
 
                       <Dropdown.Menu
-                        as={PortalMenu}
                         popperConfig={{
                           strategy: "fixed",
                         }}

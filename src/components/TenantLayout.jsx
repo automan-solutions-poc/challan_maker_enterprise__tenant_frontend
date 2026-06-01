@@ -74,7 +74,7 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <LayoutDashboard size={18} className="sidebar-icon" /> <span className="sidebar-text">Dashboard</span>
+              <LayoutDashboard size={18} className="sidebar-icon" /><span className="sidebar-text">Dashboard</span>
             </Nav.Link>
 
             <Nav.Link
@@ -83,7 +83,7 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <FileText size={18} className="sidebar-icon" /> <span className="sidebar-text">Challans</span>
+              <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Challans</span>
             </Nav.Link>
 
             <Nav.Link
@@ -92,7 +92,7 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <PlusCircle size={18} className="sidebar-icon" /> <span className="sidebar-text">New Challan</span>
+              <PlusCircle size={18} className="sidebar-icon" /><span className="sidebar-text">New Challan</span>
             </Nav.Link>
 
             {/* Admin-only links */}
@@ -105,7 +105,7 @@ export default function TenantLayout() {
                   className="tenant-link"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Palette size={18} className="sidebar-icon" /> <span className="sidebar-text">Design Settings</span>
+                  <Palette size={18} className="sidebar-icon" /><span className="sidebar-text">Design Settings</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -114,7 +114,7 @@ export default function TenantLayout() {
                   className="tenant-link"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Mail size={18} className="sidebar-icon" /> <span className="sidebar-text">Email Settings</span>
+                  <Mail size={18} className="sidebar-icon" /><span className="sidebar-text">Email Settings</span>
                 </Nav.Link>
 
                 <Nav.Link
@@ -123,7 +123,7 @@ export default function TenantLayout() {
                   className="tenant-link"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <FileText size={18} className="sidebar-icon" /> <span className="sidebar-text">Terms & Conditions</span>
+                  <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Terms & Conditions</span>
                 </Nav.Link>
               </>
             )}
@@ -137,24 +137,23 @@ export default function TenantLayout() {
               </div>
               <Button
                 variant="link"
-                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start gap-3 p-2 text-decoration-none"
+                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start p-2 text-decoration-none"
                 onClick={toggleTheme}
               >
                 {theme === "light" ? (
-                  <><Moon size={18} className="sidebar-icon" /> <span className="sidebar-text">Dark Mode</span></>
+                  <><Moon size={18} className="sidebar-icon" /><span className="sidebar-text">Dark Mode</span></>
                 ) : (
-                  <><Sun size={18} className="sidebar-icon" /> <span className="sidebar-text">Light Mode</span></>
+                  <><Sun size={18} className="sidebar-icon" /><span className="sidebar-text">Light Mode</span></>
                 )}
               </Button>
             </div>
             <Button
               variant="outline-danger"
-              className="logout-btn w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+              className="logout-btn w-100 d-flex align-items-center justify-content-center py-2"
               onClick={logout}
               style={{ borderRadius: '12px' }}
             >
-              <LogOut size={16} className="sidebar-icon" />
-              <span className="sidebar-text">Logout</span>
+              <LogOut size={16} className="sidebar-icon" /><span className="sidebar-text">Logout</span>
             </Button>
           </div>
         </div>
