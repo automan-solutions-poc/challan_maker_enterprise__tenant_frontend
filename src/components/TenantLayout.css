@@ -15,8 +15,64 @@
 }
 
 .tenant-sidebar.is-collapsed {
-  width: 0;
-  border-right: none;
+  width: 80px;
+}
+
+.tenant-sidebar.is-collapsed .sidebar-text {
+  display: none;
+}
+
+/* Show toggle on hover when collapsed or just always show a mini version?
+   User said "hide sidebar icon should be in side bar".
+   Let's make it so when collapsed, the toggle is centered. */
+
+.tenant-sidebar.is-collapsed .tenant-header {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tenant-sidebar.is-collapsed .sidebar-collapse-toggle {
+    display: flex !important;
+}
+
+.tenant-sidebar.is-collapsed .tenant-nav {
+    padding: 0.5rem;
+}
+
+.tenant-sidebar.is-collapsed .tenant-link {
+    justify-content: center;
+    padding: 0.75rem 0;
+}
+
+.sidebar-icon {
+    margin-right: 0.75rem;
+}
+
+.tenant-sidebar.is-collapsed .sidebar-icon {
+    margin-right: 0 !important;
+}
+
+.tenant-sidebar.is-collapsed .tenant-footer {
+    padding: 1rem 0.5rem !important;
+}
+
+.tenant-sidebar.is-collapsed .tenant-footer .mb-3.px-2 {
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tenant-sidebar.is-collapsed .theme-toggle-btn {
+    justify-content: center !important;
+    padding: 0.5rem 0 !important;
+}
+
+.tenant-sidebar.is-collapsed .logout-btn {
+    padding: 0.5rem 0 !important;
 }
 
 .tenant-header {
