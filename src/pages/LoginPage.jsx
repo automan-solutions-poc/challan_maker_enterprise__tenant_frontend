@@ -11,7 +11,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { Zap, Mail, LogIn, Lock, Sun, Moon } from "lucide-react";
+import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
 
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -98,12 +99,20 @@ export default function LoginPage() {
                     <div className="input-icon">
                       <Lock size={18} className="input-icon-left" />
                       <Form.Control
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                       />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
                     </div>
                   </Form.Group>
 
