@@ -11,12 +11,14 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import EmailSettingsPage from "./pages/EmailSettingsPage";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
+import LandingPage from "./pages/LandingPage";
+import ComingSoon from "./pages/ComingSoon";
 
 export default function App() {
   return (
     <Routes>
-      {/* Redirect to login by default */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/coming-soon" element={<ComingSoon />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
