@@ -77,6 +77,14 @@ export default function ChallansPage() {
     return role === "tenant_admin" || role === "tenant_staff";
   };
 
+  const [usage, setUsage] = useState(null);
+
+  useEffect(() => {
+    API.get("/dashboard").then((res) => {
+      if (res.data?.usage) setUsage(res.data.usage);
+    }).catch(() => {});
+  }, []);
+
   // 🧠 Fetch all challans
   // const fetchChallans = async () => {
   //   try {
@@ -376,6 +384,47 @@ const fetchChallans = async () => {
       </div>
 
       {msg && <Alert variant={msg.startsWith("✅") ? "success" : "danger"} className="border-0 shadow-sm">{msg}</Alert>}
+
+      {/* Usage Banner */}
+      {usage && (
+        <Card className="p-3 mb-4 border-0 shadow-sm" style={{ background: 'var(--bs-tertiary-bg)' }}>
+          <Row className="align-items-center g-3">
+            <Col xs="auto">
+              <div className="rounded-3 p-2 d-flex align-items-center justify-content-center" style={{ background: 'var(--bs-primary-bg-subtle)', width: 40, height: 40 }}>
+                <FileEarmarkPdf size={20} className="text-primary" />
+              </div>
+            </Col>
+            <Col>
+              <div className="small text-muted fw-semibold">Monthly PDF Usage</div>
+              <div className="fw-bold">
+                {usage.limit === -1 ? (
+                  <span className="text-success">Unlimited</span>
+                ) : (
+                  <span>{usage.used} / {usage.limit} used</span>
+                )}
+              </div>
+            </Col>
+            {usage.limit !== -1 && usage.limit != null && (
+              <Col xs={12} md={4}>
+                <div className="d-flex align-items-center gap-2">
+                  <div className="progress flex-grow-1" style={{ height: '8px', borderRadius: '4px', background: 'var(--bs-border-color)' }}>
+                    <div className="progress-bar" role="progressbar"
+                      style={{
+                        width: `${Math.min((usage.used / usage.limit) * 100, 100)}%`,
+                        borderRadius: '4px',
+                        background: usage.used >= usage.limit ? 'var(--bs-danger)' : 'var(--bs-primary)',
+                      }}
+                    />
+                  </div>
+                  <small className={`fw-semibold ${usage.used >= usage.limit ? 'text-danger' : 'text-muted'}`}>
+                    {Math.max(usage.limit - usage.used, 0)} left
+                  </small>
+                </div>
+              </Col>
+            )}
+          </Row>
+        </Card>
+      )}
 
       {/* Filter Card */}
       <Card className="p-4 mb-4 border-0 shadow-sm">

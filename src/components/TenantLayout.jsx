@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Nav, Button } from "react-bootstrap";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -7,6 +7,7 @@ import {
   PlusCircle,
   Palette,
   Mail,
+  Users,
   LogOut,
   Menu,
   Sun,
@@ -16,14 +17,22 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
+import API from "../api";
 import "./TenantLayout.css";
 
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [usage, setUsage] = useState(null);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
+
+  useEffect(() => {
+    API.get("/dashboard").then((res) => {
+      if (res.data?.usage) setUsage(res.data.usage);
+    }).catch(() => {});
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("tenant_token");
@@ -101,6 +110,14 @@ export default function TenantLayout() {
                 <div className="nav-section-title mt-3 mb-1 sidebar-text">ADMINISTRATION</div>
                 <Nav.Link
                   as={NavLink}
+                  to="/app/users"
+                  className="tenant-link"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Users size={18} className="sidebar-icon" /><span className="sidebar-text">Team</span>
+                </Nav.Link>
+                <Nav.Link
+                  as={NavLink}
                   to="/app/settings"
                   className="tenant-link"
                   onClick={() => setSidebarOpen(false)}
@@ -135,6 +152,26 @@ export default function TenantLayout() {
                  <div className="bg-primary rounded-circle flex-shrink-0" style={{ width: '8px', height: '8px' }}></div>
                  <small className="text-muted fw-semibold sidebar-text">Logged in as {user?.name || 'User'}</small>
               </div>
+              {usage && (
+                <div className="usage-badge px-3 py-2 rounded-3 mb-2" style={{ background: 'var(--bs-tertiary-bg)' }}>
+                  <div className="d-flex align-items-center justify-content-between small">
+                    <span className="text-muted sidebar-text">PDF Limit</span>
+                    <span className="fw-bold" style={usage.limit === -1 ? { color: 'var(--bs-success)' } : {}}>
+                      {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
+                    </span>
+                  </div>
+                  {usage.limit !== -1 && usage.limit != null && (
+                    <div className="progress mt-1" style={{ height: '4px', background: 'var(--bs-tertiary-bg)' }}>
+                      <div className="progress-bar" role="progressbar"
+                        style={{
+                          width: `${Math.min((usage.used / usage.limit) * 100, 100)}%`,
+                          background: usage.used >= usage.limit ? 'var(--bs-danger)' : 'var(--bs-primary)',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
               <Button
                 variant="link"
                 className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start p-2 text-decoration-none"

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
 import {
   Container,
@@ -67,6 +67,11 @@ export default function LoginPage() {
           <Col md={4} sm={8}>
             <Card className="login-card shadow-lg border-0">
               <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-2">
+                  <Link to="/" className="text-decoration-none small text-muted">
+                    ← Back to Home
+                  </Link>
+                </div>
                 <div className="text-center mb-5">
                   <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
                     <Zap size={32} fill="currentColor" />

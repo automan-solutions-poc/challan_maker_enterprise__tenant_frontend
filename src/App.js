@@ -6,6 +6,7 @@ import TenantDashboard from "./pages/TenantDashboard";
 import ChallansPage from "./pages/ChallansPage";
 import ChallanForm from "./pages/ChallanForm";
 import SettingsPage from "./pages/SettingsPage";
+import UsersPage from "./pages/UsersPage";
 import TenantLayout from "./components/TenantLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
@@ -43,6 +44,14 @@ export default function App() {
         {/* ================================
            ADMIN-ONLY ROUTES
         ================================== */}
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute allowedRoles={["tenant_admin"]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="settings"
           element={
