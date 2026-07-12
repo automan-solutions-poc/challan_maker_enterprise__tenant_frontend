@@ -29,12 +29,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await API.post("/login", { email, password },{
-    headers: {
-      "Content-Type": "application/json",
-    },
-    withCredentials: false, // IMPORTANT
-  });
+      const res = await API.post("/login", { email, password }, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      });
       const { token, tenant, user } = res.data;
 
       if (!token) throw new Error("Invalid server response");
@@ -46,8 +44,12 @@ export default function LoginPage() {
       if (user.role === "tenant_admin") navigate("/app/dashboard");
       else navigate("/app/challans");
     } catch (err) {
-      console.error("Login error", err);
-      setError(err.response?.data?.error || "Invalid email or password");
+      const data = err.response?.data || {};
+      if (data.needs_verification) {
+        navigate("/signup", { state: { email: data.email, needsVerification: true } });
+        return;
+      }
+      setError(data.error || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -138,6 +140,12 @@ export default function LoginPage() {
                 </Form>
 
                 <div className="text-center mt-4 text-muted small">
+                  Don't have an account?{" "}
+                  <Link to="/signup" className="fw-bold text-decoration-none">
+                    Get Started Free
+                  </Link>
+                </div>
+                <div className="text-center mt-2 text-muted small">
                   © {new Date().getFullYear()} InfiChallan. All rights reserved.
                 </div>
               </Card.Body>

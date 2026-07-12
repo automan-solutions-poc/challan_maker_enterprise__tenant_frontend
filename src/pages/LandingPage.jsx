@@ -68,11 +68,11 @@ const LandingPage = () => {
               Ditch the paperwork. Embrace the future. Professional receipts, QR tracking, and powerful analytics designed for modern service centers.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/coming-soon" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 group">
+              <Link to="/signup" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:from-blue-500 hover:to-blue-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 group">
                 Start Your Free Trial
                 <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/coming-soon" className="w-full sm:w-auto bg-white/[0.04] text-white border border-white/[0.08] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-white/[0.08] transition-all backdrop-blur-xl">
+              <Link to="/signup" className="w-full sm:w-auto bg-white/[0.04] text-white border border-white/[0.08] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-white/[0.08] transition-all backdrop-blur-xl">
                 Book a Demo
               </Link>
             </div>
@@ -238,7 +238,7 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/coming-soon" className={`w-full block text-center py-4 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  <Link to="/signup" className={`w-full block text-center py-4 rounded-xl font-bold text-sm transition-all duration-300 ${
                     plan.popular
                     ? 'bg-white text-blue-600 hover:scale-[1.02] shadow-xl shadow-black/10'
                     : 'bg-white/[0.06] text-white hover:bg-white/[0.1] hover:scale-[1.02] border border-white/[0.06]'
@@ -266,10 +266,10 @@ const LandingPage = () => {
               <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter leading-[0.9]">Start building <br />for the future.</h2>
               <p className="text-blue-100 text-lg md:text-xl mb-10 max-w-2xl mx-auto font-medium">Join 500+ service centers modernizing their business with infiChallan.</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/coming-soon" className="w-full sm:w-auto bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-base hover:scale-105 transition-all shadow-2xl shadow-black/20">
+                <Link to="/signup" className="w-full sm:w-auto bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-base hover:scale-105 transition-all shadow-2xl shadow-black/20">
                   Get Started Now
                 </Link>
-                <Link to="/coming-soon" className="w-full sm:w-auto bg-blue-900/30 text-white border border-white/20 backdrop-blur-md px-8 py-4 rounded-xl font-bold text-base hover:bg-blue-900/40 transition-all">
+                <Link to="/signup" className="w-full sm:w-auto bg-blue-900/30 text-white border border-white/20 backdrop-blur-md px-8 py-4 rounded-xl font-bold text-base hover:bg-blue-900/40 transition-all">
                   Contact Sales
                 </Link>
               </div>

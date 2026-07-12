@@ -54,8 +54,7 @@ export default function ChallansPage() {
   });
 
   const navigate = useNavigate();
-  const base_url_for_img = "http://api.automan.solutions";
-  // const base_url_for_img = "http://192.168.1.12:6001";
+  const base_url_for_img = API.defaults.baseURL.replace("/api/tenant", "");
 
   // Determine user role robustly from localStorage
   const getUserRole = () => {

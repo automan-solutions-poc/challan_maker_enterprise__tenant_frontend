@@ -49,6 +49,9 @@ export default function TenantLayout() {
         <Menu size={20} />
       </button>
 
+      {/* Backdrop overlay for mobile */}
+      {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
       <aside
         className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "is-collapsed" : ""}`}
@@ -105,44 +108,46 @@ export default function TenantLayout() {
             </Nav.Link>
 
             {/* Admin-only links */}
+            {user?.role === "tenant_admin" && <div className="nav-section-title mt-3 mb-1 sidebar-text">ADMINISTRATION</div>}
             {user?.role === "tenant_admin" && (
-              <>
-                <div className="nav-section-title mt-3 mb-1 sidebar-text">ADMINISTRATION</div>
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/users"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Users size={18} className="sidebar-icon" /><span className="sidebar-text">Team</span>
-                </Nav.Link>
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/settings"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Palette size={18} className="sidebar-icon" /><span className="sidebar-text">Design Settings</span>
-                </Nav.Link>
-
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/email-settings"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Mail size={18} className="sidebar-icon" /><span className="sidebar-text">Email Settings</span>
-                </Nav.Link>
-
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/terms"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Terms & Conditions</span>
-                </Nav.Link>
-              </>
+              <Nav.Link
+                as={NavLink}
+                to="/app/users"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Users size={18} className="sidebar-icon" /><span className="sidebar-text">Team</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/settings"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Palette size={18} className="sidebar-icon" /><span className="sidebar-text">Design Settings</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/email-settings"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Mail size={18} className="sidebar-icon" /><span className="sidebar-text">Email Settings</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/terms"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Terms & Conditions</span>
+              </Nav.Link>
             )}
           </Nav>
 

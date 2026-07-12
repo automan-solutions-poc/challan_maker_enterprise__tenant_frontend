@@ -14,6 +14,7 @@ import EmailSettingsPage from "./pages/EmailSettingsPage";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
 import LandingPage from "./pages/LandingPage";
 import ComingSoon from "./pages/ComingSoon";
+import SignupPage from "./pages/SignupPage";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/coming-soon" element={<ComingSoon />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* ================================
