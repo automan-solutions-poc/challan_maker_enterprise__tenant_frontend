@@ -56,6 +56,28 @@
 
 .input-icon input {
   padding-left: 38px !important;
+  padding-right: 40px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  color: #adb5bd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-main);
 }
 
 /* 🔘 Login button */

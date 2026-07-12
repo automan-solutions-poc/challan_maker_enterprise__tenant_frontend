@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Nav, Button } from "react-bootstrap";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
@@ -7,20 +7,32 @@ import {
   PlusCircle,
   Palette,
   Mail,
+  Users,
   LogOut,
   Menu,
   Sun,
   Moon,
   Zap,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
+import API from "../api";
 import "./TenantLayout.css";
 
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [usage, setUsage] = useState(null);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
+
+  useEffect(() => {
+    API.get("/dashboard").then((res) => {
+      if (res.data?.usage) setUsage(res.data.usage);
+    }).catch(() => {});
+  }, []);
 
   const logout = () => {
     localStorage.removeItem("tenant_token");
@@ -37,20 +49,34 @@ export default function TenantLayout() {
         <Menu size={20} />
       </button>
 
+      {/* Backdrop overlay for mobile */}
+      {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
       <aside
-        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""}`}
+        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "is-collapsed" : ""}`}
       >
         <div className="d-flex flex-column h-100">
           {/* Company Header */}
-          <div className="tenant-header px-4 py-4 d-flex align-items-center gap-3">
-            <div className="tenant-logo d-flex align-items-center justify-content-center shadow-sm">
-              <Zap size={20} fill="currentColor" />
+          <div className="tenant-header px-4 py-4 d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center gap-3 overflow-hidden">
+              <div className="tenant-logo d-flex align-items-center justify-content-center shadow-sm flex-shrink-0">
+                <Zap size={20} fill="currentColor" />
+              </div>
+              <div className="overflow-hidden sidebar-text">
+                <h5 className="tenant-name mb-0 fw-bold">InfiChallan</h5>
+                <small className="text-muted text-uppercase tracking-wider" style={{ fontSize: '9px', fontWeight: '700' }}>Enterprise Edition</small>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <h5 className="tenant-name mb-0 fw-bold">InfiChallan</h5>
-              <small className="text-muted text-uppercase tracking-wider" style={{ fontSize: '9px', fontWeight: '700' }}>Enterprise Edition</small>
-            </div>
+
+            <Button
+              variant="link"
+              className="text-muted p-0 d-none d-md-flex align-items-center justify-content-center sidebar-collapse-toggle"
+              onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+            </Button>
           </div>
 
           <Nav className="tenant-nav flex-column">
@@ -60,7 +86,7 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <LayoutDashboard size={18} className="me-2" /> Dashboard
+              <LayoutDashboard size={18} className="sidebar-icon" /><span className="sidebar-text">Dashboard</span>
             </Nav.Link>
 
             <Nav.Link
@@ -69,7 +95,7 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <FileText size={18} className="me-2" /> Challans
+              <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Challans</span>
             </Nav.Link>
 
             <Nav.Link
@@ -78,76 +104,105 @@ export default function TenantLayout() {
               className="tenant-link"
               onClick={() => setSidebarOpen(false)}
             >
-              <PlusCircle size={18} className="me-2" /> New Challan
+              <PlusCircle size={18} className="sidebar-icon" /><span className="sidebar-text">New Challan</span>
             </Nav.Link>
 
             {/* Admin-only links */}
+            {user?.role === "tenant_admin" && <div className="nav-section-title mt-3 mb-1 sidebar-text">ADMINISTRATION</div>}
             {user?.role === "tenant_admin" && (
-              <>
-                <div className="nav-section-title mt-3 mb-1">ADMINISTRATION</div>
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/settings"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Palette size={18} className="me-2" /> Design Settings
-                </Nav.Link>
-
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/email-settings"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Mail size={18} className="me-2" /> Email Settings
-                </Nav.Link>
-
-                <Nav.Link
-                  as={NavLink}
-                  to="/app/terms"
-                  className="tenant-link"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <FileText size={18} className="me-2" /> Terms & Conditions
-                </Nav.Link>
-              </>
+              <Nav.Link
+                as={NavLink}
+                to="/app/users"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Users size={18} className="sidebar-icon" /><span className="sidebar-text">Team</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/settings"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Palette size={18} className="sidebar-icon" /><span className="sidebar-text">Design Settings</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/email-settings"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Mail size={18} className="sidebar-icon" /><span className="sidebar-text">Email Settings</span>
+              </Nav.Link>
+            )}
+            {user?.role === "tenant_admin" && (
+              <Nav.Link
+                as={NavLink}
+                to="/app/terms"
+                className="tenant-link"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Terms & Conditions</span>
+              </Nav.Link>
             )}
           </Nav>
 
           <div className="tenant-footer p-3">
             <div className="mb-3 px-2">
               <div className="d-flex align-items-center gap-2 mb-3">
-                 <div className="bg-primary rounded-circle" style={{ width: '8px', height: '8px' }}></div>
-                 <small className="text-muted fw-semibold">Logged in as {user?.name || 'User'}</small>
+                 <div className="bg-primary rounded-circle flex-shrink-0" style={{ width: '8px', height: '8px' }}></div>
+                 <small className="text-muted fw-semibold sidebar-text">Logged in as {user?.name || 'User'}</small>
               </div>
+              {usage && (
+                <div className="usage-badge px-3 py-2 rounded-3 mb-2" style={{ background: 'var(--bs-tertiary-bg)' }}>
+                  <div className="d-flex align-items-center justify-content-between small">
+                    <span className="text-muted sidebar-text">PDF Limit</span>
+                    <span className="fw-bold" style={usage.limit === -1 ? { color: 'var(--bs-success)' } : {}}>
+                      {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
+                    </span>
+                  </div>
+                  {usage.limit !== -1 && usage.limit != null && (
+                    <div className="progress mt-1" style={{ height: '4px', background: 'var(--bs-tertiary-bg)' }}>
+                      <div className="progress-bar" role="progressbar"
+                        style={{
+                          width: `${Math.min((usage.used / usage.limit) * 100, 100)}%`,
+                          background: usage.used >= usage.limit ? 'var(--bs-danger)' : 'var(--bs-primary)',
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
               <Button
                 variant="link"
-                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start gap-3 p-2 text-decoration-none"
+                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start p-2 text-decoration-none"
                 onClick={toggleTheme}
               >
                 {theme === "light" ? (
-                  <><Moon size={18} /> <span>Dark Mode</span></>
+                  <><Moon size={18} className="sidebar-icon" /><span className="sidebar-text">Dark Mode</span></>
                 ) : (
-                  <><Sun size={18} /> <span>Light Mode</span></>
+                  <><Sun size={18} className="sidebar-icon" /><span className="sidebar-text">Light Mode</span></>
                 )}
               </Button>
             </div>
             <Button
               variant="outline-danger"
-              className="logout-btn w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+              className="logout-btn w-100 d-flex align-items-center justify-content-center py-2"
               onClick={logout}
               style={{ borderRadius: '12px' }}
             >
-              <LogOut size={16} />
-              Logout
+              <LogOut size={16} className="sidebar-icon" /><span className="sidebar-text">Logout</span>
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="tenant-content">
+      <main className={`tenant-content ${isSidebarCollapsed ? "sidebar-collapsed" : ""}`}>
         <Container fluid className="p-4">
           <Outlet />
         </Container>

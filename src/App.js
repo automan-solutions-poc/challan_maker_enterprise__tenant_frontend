@@ -6,18 +6,23 @@ import TenantDashboard from "./pages/TenantDashboard";
 import ChallansPage from "./pages/ChallansPage";
 import ChallanForm from "./pages/ChallanForm";
 import SettingsPage from "./pages/SettingsPage";
+import UsersPage from "./pages/UsersPage";
 import TenantLayout from "./components/TenantLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Unauthorized from "./pages/Unauthorized";
 import EmailSettingsPage from "./pages/EmailSettingsPage";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
+import LandingPage from "./pages/LandingPage";
+import ComingSoon from "./pages/ComingSoon";
+import SignupPage from "./pages/SignupPage";
 
 export default function App() {
   return (
     <Routes>
-      {/* Redirect to login by default */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/coming-soon" element={<ComingSoon />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* ================================
@@ -41,6 +46,14 @@ export default function App() {
         {/* ================================
            ADMIN-ONLY ROUTES
         ================================== */}
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute allowedRoles={["tenant_admin"]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="settings"
           element={

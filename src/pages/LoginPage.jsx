@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
 import {
   Container,
@@ -11,7 +11,7 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { Zap, Mail, LogIn, Lock, Sun, Moon } from "lucide-react";
+import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
 
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -28,12 +29,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await API.post("/login", { email, password },{
-    headers: {
-      "Content-Type": "application/json",
-    },
-    withCredentials: false, // IMPORTANT
-  });
+      const res = await API.post("/login", { email, password }, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: false,
+      });
       const { token, tenant, user } = res.data;
 
       if (!token) throw new Error("Invalid server response");
@@ -45,8 +44,12 @@ export default function LoginPage() {
       if (user.role === "tenant_admin") navigate("/app/dashboard");
       else navigate("/app/challans");
     } catch (err) {
-      console.error("Login error", err);
-      setError(err.response?.data?.error || "Invalid email or password");
+      const data = err.response?.data || {};
+      if (data.needs_verification) {
+        navigate("/signup", { state: { email: data.email, needsVerification: true } });
+        return;
+      }
+      setError(data.error || "Invalid email or password");
     } finally {
       setLoading(false);
     }
@@ -66,6 +69,11 @@ export default function LoginPage() {
           <Col md={4} sm={8}>
             <Card className="login-card shadow-lg border-0">
               <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-2">
+                  <Link to="/" className="text-decoration-none small text-muted">
+                    ← Back to Home
+                  </Link>
+                </div>
                 <div className="text-center mb-5">
                   <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
                     <Zap size={32} fill="currentColor" />
@@ -98,12 +106,20 @@ export default function LoginPage() {
                     <div className="input-icon">
                       <Lock size={18} className="input-icon-left" />
                       <Form.Control
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                       />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
                     </div>
                   </Form.Group>
 
@@ -124,6 +140,12 @@ export default function LoginPage() {
                 </Form>
 
                 <div className="text-center mt-4 text-muted small">
+                  Don't have an account?{" "}
+                  <Link to="/signup" className="fw-bold text-decoration-none">
+                    Get Started Free
+                  </Link>
+                </div>
+                <div className="text-center mt-2 text-muted small">
                   © {new Date().getFullYear()} InfiChallan. All rights reserved.
                 </div>
               </Card.Body>
