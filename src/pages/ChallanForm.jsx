@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ChallanPreview from "../components/ChallanPreview";
 import Loader from "../components/Loader";
 import "./ChallanForm.css";
+import { trackEvent, Events } from "../analytics";
 
 export default function ChallanForm({ editMode = false }) {
   const { challan_no } = useParams();
@@ -118,10 +119,15 @@ export default function ChallanForm({ editMode = false }) {
         await API.put(`/challan/${challan_no}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        trackEvent(Events.CHALLAN_UPDATED, { challan_no });
         setMsg("✅ Challan updated successfully");
       } else {
-        await API.post("/challan", data, {
+        const res = await API.post("/challan", data, {
           headers: { "Content-Type": "multipart/form-data" },
+        });
+        trackEvent(Events.CHALLAN_CREATED, {
+          challan_no: res.data?.challan_no,
+          email_sent: Boolean(form.email),
         });
         setMsg("✅ Challan created successfully");
       }
@@ -152,20 +158,6 @@ export default function ChallanForm({ editMode = false }) {
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold mb-0">{editMode ? "Edit Challan" : "Create New Challan"}</h3>
-        <div className="d-flex gap-2">
-          <Button variant="outline-secondary" onClick={() => navigate("/app/challans")} disabled={loading}>
-            Cancel
-          </Button>
-          <Button className="btn-gradient" onClick={submit} disabled={loading}>
-            {loading ? (
-              <><Spinner animation="border" size="sm" className="me-2" /> Saving...</>
-            ) : editMode ? (
-              "Update Challan"
-            ) : (
-              "Save Challan"
-            )}
-          </Button>
-        </div>
       </div>
 
       {msg && (
@@ -384,6 +376,28 @@ export default function ChallanForm({ editMode = false }) {
                   disabled={loading}
                 />
               </Form.Group>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mb-4 pt-2 challan-form-actions">
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => navigate("/app/challans")}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="btn-gradient" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" /> Saving...
+                  </>
+                ) : editMode ? (
+                  "Update Challan"
+                ) : (
+                  "Save Challan"
+                )}
+              </Button>
             </div>
           </Form>
         </div>

@@ -1,6 +1,6 @@
 // src/pages/ChallansPage.jsx
 import React, { useEffect, useState } from "react";
-import API from "../api";
+import API, { getApiOrigin } from "../api";
 import {
   Table,
   Button,
@@ -28,6 +28,7 @@ import {
 import { Trash } from "lucide-react";
 import Loader from "../components/Loader";
 import "./ChallansPage.css";
+import { trackEvent, Events } from "../analytics";
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
@@ -54,7 +55,7 @@ export default function ChallansPage() {
   });
 
   const navigate = useNavigate();
-  const base_url_for_img = API.defaults.baseURL.replace("/api/tenant", "");
+  const base_url_for_img = getApiOrigin();
 
   // Determine user role robustly from localStorage
   const getUserRole = () => {
@@ -198,6 +199,7 @@ const fetchChallans = async () => {
 
       if (failed.length === 0) {
         setMsg(`✅ Deleted ${items.length} challan(s) successfully.`);
+        trackEvent(Events.CHALLAN_BULK_DELETED, { count: items.length });
       } else {
         setMsg(`⚠️ Deleted ${items.length - failed.length} challan(s). Failed: ${failed.join(", ")}`);
       }
@@ -264,6 +266,7 @@ const fetchChallans = async () => {
     setProcessing(true);
     try {
       await API.delete(`/challan/${challan_no}`);
+      trackEvent(Events.CHALLAN_DELETED, { challan_no });
       setMsg("🗑️ Challan deleted successfully");
       fetchChallans();
     } catch (err) {
@@ -274,14 +277,16 @@ const fetchChallans = async () => {
     }
   };
 
-  const handleDownloadPDF = (pdfUrl) => {
+  const handleDownloadPDF = (pdfUrl, challanNo) => {
     if (!pdfUrl) return alert("PDF not available yet.");
+    trackEvent(Events.CHALLAN_PDF_DOWNLOADED, { challan_no: challanNo });
     const fullUrl = pdfUrl.startsWith("http") ? pdfUrl : `${base_url_for_img}${pdfUrl}`;
     window.open(fullUrl, "_blank");
   };
 
-  const handleViewQR = (qrUrl) => {
+  const handleViewQR = (qrUrl, challanNo) => {
     if (!qrUrl) return alert("QR code not available.");
+    trackEvent(Events.CHALLAN_QR_VIEWED, { challan_no: challanNo });
     const fullUrl = qrUrl.startsWith("http") ? qrUrl : `${base_url_for_img}${qrUrl}`;
     setQrLoading(true);
     setQrPreview(fullUrl);
@@ -292,6 +297,7 @@ const fetchChallans = async () => {
     setProcessing(true);
     try {
       const res = await API.post(`/challan/${challan_no}/send_otp`);
+      trackEvent(Events.CHALLAN_OTP_SENT, { challan_no });
       setMsg(`✅ ${res.data.message}`);
     } catch (err) {
       console.error(err);
@@ -312,6 +318,8 @@ const fetchChallans = async () => {
     setVerifying(true);
     try {
       const res = await API.post(`/challan/${selectedChallan.challan_no}/verify_otp`, { otp: otpValue });
+      trackEvent(Events.CHALLAN_OTP_VERIFIED, { challan_no: selectedChallan.challan_no });
+      trackEvent(Events.CHALLAN_DELIVERED, { challan_no: selectedChallan.challan_no });
       setMsg(`✅ ${res.data.message}`);
       setOtpModal(false);
       fetchChallans();
@@ -544,7 +552,7 @@ const fetchChallans = async () => {
                     />
                   </td>
                   <td>{i + 1}</td>
-                  <td onClick={() => handleDownloadPDF(c.pdf_url)} style={{ cursor: "pointer" }}>
+                  <td onClick={() => handleDownloadPDF(c.pdf_url, c.challan_no)} style={{ cursor: "pointer" }}>
                     {c.challan_no}
                   </td>
                   <td>{c.customer_name}</td>
@@ -577,12 +585,12 @@ const fetchChallans = async () => {
                         }}
                         style={{ minWidth: "180px" }}
                       >
-                        <Dropdown.Item onClick={() => handleDownloadPDF(c.pdf_url)}>
+                        <Dropdown.Item onClick={() => handleDownloadPDF(c.pdf_url, c.challan_no)}>
                           <FileEarmarkPdf className="me-2 text-danger" />
                           View PDF
                         </Dropdown.Item>
 
-                        <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url)}>
+                        <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url, c.challan_no)}>
                           <QrCode className="me-2 text-primary" />
                           View QR
                         </Dropdown.Item>

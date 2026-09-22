@@ -1,36 +1,45 @@
 import React, { useEffect, useState } from "react";
 import API from "../api";
-import { Form, Button, Alert, Card, Row, Col, Spinner } from "react-bootstrap";
+import {
+  Form,
+  Button,
+  Alert,
+  Card,
+  Spinner,
+  InputGroup,
+  Badge,
+  Row,
+  Col,
+} from "react-bootstrap";
 import Loader from "../components/Loader";
+import { trackEvent, Events } from "../analytics";
 
 export default function EmailSettingsPage() {
-  const [form, setForm] = useState({
-    sender_name: "",
-    sender_email: "",
-    sender_password: "",
-    smtp_server: "",
-    smtp_port: "",
-    use_tls: true,
-    use_ssl: false,
-  });
-
+  const [senderNames, setSenderNames] = useState([]);
+  const [defaultSenderName, setDefaultSenderName] = useState("");
+  const [newName, setNewName] = useState("");
+  const [testEmail, setTestEmail] = useState("");
+  const [testSenderName, setTestSenderName] = useState("");
   const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(true); // 👈 start with loading true
+  const [loading, setLoading] = useState(true);
+  const [sendingTest, setSendingTest] = useState(false);
 
-  // 🧠 Load existing settings from backend
   useEffect(() => {
     const load = async () => {
       try {
+        const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
+        if (user?.email) setTestEmail(user.email);
+
         const res = await API.get("/email_settings");
-        if (res.data?.email_config) {
-          setForm((prev) => ({
-            ...prev,
-            ...res.data.email_config,
-          }));
-        }
+        const cfg = res.data?.email_config || {};
+        const names = Array.isArray(cfg.sender_names) ? cfg.sender_names : [];
+        setSenderNames(names);
+        const defaultName = cfg.default_sender_name || names[0] || "";
+        setDefaultSenderName(defaultName);
+        setTestSenderName(defaultName);
       } catch (err) {
         console.error("Failed to load email settings", err);
-        setMsg("⚠️ Could not load email settings.");
+        setMsg("⚠️ Could not load sender names.");
       } finally {
         setLoading(false);
       }
@@ -38,41 +47,88 @@ export default function EmailSettingsPage() {
     load();
   }, []);
 
-  // 💾 Save email settings
+  useEffect(() => {
+    if (defaultSenderName) setTestSenderName(defaultSenderName);
+  }, [defaultSenderName]);
+
+  const addName = () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    if (senderNames.includes(trimmed)) {
+      setMsg("⚠️ That display name already exists.");
+      return;
+    }
+    const updated = [...senderNames, trimmed];
+    setSenderNames(updated);
+    if (!defaultSenderName) setDefaultSenderName(trimmed);
+    setNewName("");
+    setMsg("");
+  };
+
+  const removeName = (name) => {
+    if (senderNames.length <= 1) {
+      setMsg("⚠️ At least one customer-visible name is required.");
+      return;
+    }
+    const updated = senderNames.filter((n) => n !== name);
+    setSenderNames(updated);
+    if (defaultSenderName === name) setDefaultSenderName(updated[0]);
+  };
+
   const save = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMsg("");
     try {
-      await API.post("/email_settings", form);
-      setMsg("✅ Email settings saved successfully!");
+      await API.post("/email_settings", {
+        sender_names: senderNames,
+        default_sender_name: defaultSenderName,
+      });
+      setMsg("✅ Sender names saved successfully!");
+      trackEvent(Events.EMAIL_NAMES_SAVED, {
+        name_count: senderNames.length,
+        default_sender_name: defaultSenderName,
+      });
     } catch (err) {
       console.error(err);
-      setMsg("❌ Failed to save email settings.");
+      setMsg(err.response?.data?.error || "❌ Failed to save sender names.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✏️ Handle checkbox toggles
-  const handleToggle = (field) =>
-    setForm({ ...form, [field]: !form[field] });
+  const sendTest = async () => {
+    setSendingTest(true);
+    setMsg("");
+    try {
+      const res = await API.post("/email_settings/test", {
+        to_email: testEmail,
+        sender_name: testSenderName || defaultSenderName,
+      });
+      setMsg(`✅ ${res.data?.message || "Test email sent."}`);
+      trackEvent(Events.EMAIL_TEST_SENT, {
+        to_email: testEmail,
+        sender_name: testSenderName || defaultSenderName,
+      });
+    } catch (err) {
+      setMsg(err.response?.data?.error || "❌ Failed to send test email.");
+      trackEvent(Events.EMAIL_TEST_FAILED, { to_email: testEmail });
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
-  // ✅ Show loader while fetching or saving
-  if (loading && !form.sender_email) {
-    return <Loader text="Loading email settings..." fullscreen />;
+  if (loading && senderNames.length === 0) {
+    return <Loader text="Loading sender names..." fullscreen />;
   }
 
   return (
     <div className="container mt-4 position-relative">
-      {loading && <Loader text="Saving email settings..." overlay />}
+      {(loading || sendingTest) && (
+        <Loader text={sendingTest ? "Sending test email..." : "Saving..."} overlay />
+      )}
 
       <Card className="p-4 shadow-sm">
-        <h3>📧 Challan Email Settings</h3>
-        <p className="text-muted mb-4">
-          Configure your service center’s SMTP details to send challan PDFs directly to customers.
-        </p>
-
         {msg && (
           <Alert
             variant={msg.startsWith("✅") ? "success" : "danger"}
@@ -83,107 +139,125 @@ export default function EmailSettingsPage() {
         )}
 
         <Form onSubmit={save}>
-          <Row>
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>Sender Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="e.g. Phoenix Computers"
-                  value={form.sender_name}
-                  onChange={(e) =>
-                    setForm({ ...form, sender_name: e.target.value })
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-semibold">Customer-visible sender names</Form.Label>
+            <div className="d-flex flex-wrap gap-2 mb-3">
+              {senderNames.map((name) => (
+                <Badge
+                  key={name}
+                  bg={name === defaultSenderName ? "primary" : "secondary"}
+                  className="d-flex align-items-center gap-2 py-2 px-3"
+                  style={{ fontSize: "0.9rem" }}
+                >
+                  <span>{name}</span>
+                  {name === defaultSenderName && (
+                    <span className="opacity-75" style={{ fontSize: "0.7rem" }}>
+                      DEFAULT
+                    </span>
+                  )}
+                  <Button
+                    variant="link"
+                    className="p-0 text-white text-decoration-none"
+                    size="sm"
+                    onClick={() => setDefaultSenderName(name)}
+                    type="button"
+                    title="Set as default"
+                  >
+                    ★
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="p-0 text-white text-decoration-none"
+                    size="sm"
+                    onClick={() => removeName(name)}
+                    type="button"
+                    title="Remove"
+                  >
+                    ×
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+            <InputGroup>
+              <Form.Control
+                type="text"
+                placeholder="e.g. Phoenix Computers"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addName();
                   }
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Sender Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  placeholder="e.g. yourcompany@gmail.com"
-                  value={form.sender_email}
-                  onChange={(e) =>
-                    setForm({ ...form, sender_email: e.target.value })
-                  }
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>App Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Enter your app-specific password"
-                  value={form.sender_password}
-                  onChange={(e) =>
-                    setForm({ ...form, sender_password: e.target.value })
-                  }
-                  required
-                />
-                <Form.Text className="text-muted">
-                  ⚠️ Use an <strong>App Password</strong> (not your normal login password).
-                </Form.Text>
-              </Form.Group>
-            </Col>
-
-            <Col md={6}>
-              <Form.Group className="mb-3">
-                <Form.Label>SMTP Server</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="e.g. smtp.gmail.com"
-                  value={form.smtp_server}
-                  onChange={(e) =>
-                    setForm({ ...form, smtp_server: e.target.value })
-                  }
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>SMTP Port</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="587"
-                  value={form.smtp_port}
-                  onChange={(e) =>
-                    setForm({ ...form, smtp_port: e.target.value })
-                  }
-                  required
-                />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Check
-                  type="checkbox"
-                  label="Use TLS (STARTTLS)"
-                  checked={form.use_tls}
-                  onChange={() => handleToggle("use_tls")}
-                />
-                <Form.Check
-                  type="checkbox"
-                  label="Use SSL"
-                  checked={form.use_ssl}
-                  onChange={() => handleToggle("use_ssl")}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
+                }}
+              />
+              <Button variant="outline-primary" type="button" onClick={addName}>
+                Add name
+              </Button>
+            </InputGroup>
+            <Form.Text className="text-muted">
+              These names appear to customers in challan emails. Click ★ to choose the default.
+            </Form.Text>
+          </Form.Group>
 
           <div className="text-end mt-3">
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || senderNames.length === 0}>
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
                   Saving...
                 </>
               ) : (
-                "💾 Save Settings"
+                "Save"
               )}
             </Button>
           </div>
         </Form>
+
+        <hr className="my-4" />
+
+        <Form.Group className="mb-3">
+          <Form.Label className="fw-semibold">Send test email</Form.Label>
+          <Form.Text className="text-muted d-block mb-3">
+            Verify how your sender name appears before sending challans to customers.
+          </Form.Text>
+          <Row className="g-3 align-items-end">
+            <Col md={5}>
+              <Form.Label className="small text-muted">Recipient</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="you@example.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                required
+              />
+            </Col>
+            <Col md={5}>
+              <Form.Label className="small text-muted">Sender name to preview</Form.Label>
+              <Form.Select
+                value={testSenderName}
+                onChange={(e) => setTestSenderName(e.target.value)}
+              >
+                {senderNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                    {name === defaultSenderName ? " (default)" : ""}
+                  </option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col md={2} className="d-grid">
+              <Button
+                variant="outline-secondary"
+                type="button"
+                disabled={sendingTest || !testEmail || senderNames.length === 0}
+                onClick={sendTest}
+              >
+                {sendingTest ? "Sending…" : "Send test"}
+              </Button>
+            </Col>
+          </Row>
+        </Form.Group>
       </Card>
     </div>
   );

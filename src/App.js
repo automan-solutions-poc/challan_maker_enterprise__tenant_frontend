@@ -15,6 +15,7 @@ import TermsConditionsPage from "./pages/TermsConditionsPage";
 import LandingPage from "./pages/LandingPage";
 import ComingSoon from "./pages/ComingSoon";
 import SignupPage from "./pages/SignupPage";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/coming-soon" element={<ComingSoon />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/accept-invite" element={<AcceptInvitePage />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* ================================

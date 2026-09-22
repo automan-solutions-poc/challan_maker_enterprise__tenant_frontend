@@ -3,6 +3,7 @@ import { Row, Col, Form, Button, Alert, Image } from "react-bootstrap";
 import API from "../api";
 import ChallanPreview from "../components/ChallanPreview";
 import Loader from "../components/Loader";
+import { trackEvent, Events } from "../analytics";
 
 export default function SettingsPage() {
   const [template, setTemplate] = useState({
@@ -56,6 +57,7 @@ export default function SettingsPage() {
       if (res.data.logo_url) {
         setTemplate({ ...template, logo_url: res.data.logo_url });
         setMsg("✅ Logo uploaded successfully");
+        trackEvent(Events.LOGO_UPLOADED);
       }
     } catch (err) {
       console.error("Logo upload failed", err);
@@ -74,6 +76,10 @@ export default function SettingsPage() {
         challan: {}, // for future customization
       });
       setMsg("✅ Settings saved successfully");
+      trackEvent(Events.DESIGN_SETTINGS_SAVED, {
+        company_name: template.company_name,
+        theme_color: template.theme_color,
+      });
       localStorage.setItem("tenant_settings", JSON.stringify({ branding: template }));
     } catch (err) {
       console.error(err);

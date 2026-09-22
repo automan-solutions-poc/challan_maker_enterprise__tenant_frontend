@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import API from "../api";
 import {
   Container,
@@ -14,15 +14,18 @@ import {
 import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
+import { identifyUser, trackEvent, Events } from "../analytics";
 
 export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const successMessage = location.state?.message;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +44,14 @@ export default function LoginPage() {
       localStorage.setItem("tenant_user", JSON.stringify(user));
       localStorage.setItem("tenant_info", JSON.stringify(tenant));
 
+      identifyUser(user.email, {
+        user_id: user.id,
+        role: user.role,
+        tenant_id: tenant?.id,
+        tenant_name: tenant?.name,
+      });
+      trackEvent(Events.LOGIN_SUCCESS, { role: user.role, tenant_id: tenant?.id });
+
       if (user.role === "tenant_admin") navigate("/app/dashboard");
       else navigate("/app/challans");
     } catch (err) {
@@ -50,6 +61,7 @@ export default function LoginPage() {
         return;
       }
       setError(data.error || "Invalid email or password");
+      trackEvent(Events.LOGIN_FAILED, { reason: data.error || "invalid_credentials" });
     } finally {
       setLoading(false);
     }
@@ -84,6 +96,7 @@ export default function LoginPage() {
                   </p>
                 </div>
 
+                {successMessage && <Alert variant="success">{successMessage}</Alert>}
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <Form onSubmit={handleSubmit}>

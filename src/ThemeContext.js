@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { trackEvent, Events } from "./analytics";
 
 const ThemeContext = createContext();
 
@@ -13,7 +14,11 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+    setTheme((prevTheme) => {
+      const next = prevTheme === "light" ? "dark" : "light";
+      trackEvent(Events.THEME_TOGGLED, { theme: next });
+      return next;
+    });
   };
 
   return (

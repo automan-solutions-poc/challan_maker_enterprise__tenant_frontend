@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Alert, Card } from "react-bootstrap";
 import { Plus, Users, Trash2, Edit3 } from "lucide-react";
 import API from "../api";
 import Loader from "../components/Loader";
+import { trackEvent, Events } from "../analytics";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -39,9 +40,11 @@ export default function UsersPage() {
         const payload = { name: form.name, role: form.role };
         if (form.email) payload.email = form.email;
         const res = await API.put(`/users/${editingUser.id}`, payload);
+        trackEvent(Events.TEAM_USER_UPDATED, { user_id: editingUser.id, role: form.role });
         setMsg(res.data.message);
       } else {
         const res = await API.post("/users", form);
+        trackEvent(Events.TEAM_USER_CREATED, { role: form.role });
         setMsg(res.data.message);
       }
       setShowModal(false);
@@ -62,6 +65,7 @@ export default function UsersPage() {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
       const res = await API.delete(`/users/${userId}`);
+      trackEvent(Events.TEAM_USER_DELETED, { user_id: userId });
       setMsg(res.data.message);
       fetchUsers();
     } catch (err) {

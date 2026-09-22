@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Form, Button, Alert, Spinner } from "react-bootstrap";
 import API from "../api";
+import { trackEvent, Events } from "../analytics";
 import Loader from "../components/Loader";
 
 export default function TermsConditionsPage() {
@@ -32,6 +33,7 @@ export default function TermsConditionsPage() {
     setMsg("");
     try {
       await API.put("/settings/terms", { terms_conditions: terms });
+      trackEvent(Events.TERMS_SAVED, { length: terms.length });
       setMsg("✅ Terms & Conditions saved successfully.");
     } catch (err) {
       console.error("Failed to save terms:", err);

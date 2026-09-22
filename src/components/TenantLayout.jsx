@@ -19,6 +19,7 @@ import {
 import { useTheme } from "../ThemeContext";
 import API from "../api";
 import "./TenantLayout.css";
+import { resetAnalytics, trackEvent, Events } from "../analytics";
 
 export default function TenantLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +36,8 @@ export default function TenantLayout() {
   }, []);
 
   const logout = () => {
+    trackEvent(Events.LOGOUT, { role: user?.role });
+    resetAnalytics();
     localStorage.removeItem("tenant_token");
     localStorage.removeItem("tenant_user");
     localStorage.removeItem("tenant_info");

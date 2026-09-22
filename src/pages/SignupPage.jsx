@@ -7,9 +7,8 @@ import {
 import { Zap, Mail, Lock, Eye, EyeOff, Building2, User, ArrowRight, CheckCircle } from "lucide-react";
 import "./LoginPage.css";
 
-import API from "../api";
-
-const API_BASE = API.defaults.baseURL.replace("/api/tenant", "/api/public");
+import { getPublicApiBase } from "../api";
+import { identifyUser, trackEvent, Events } from "../analytics";
 
 export default function SignupPage() {
   const [step, setStep] = useState("form");
@@ -51,16 +50,18 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/signup`, {
+      const res = await axios.post(`${getPublicApiBase()}/signup`, {
         company_name: companyName,
         admin_name: adminName,
         admin_email: email,
         password,
       });
       setMessage(res.data.message);
+      trackEvent(Events.SIGNUP_COMPLETED, { step: "otp_sent", email });
       setStep("verify");
     } catch (err) {
       setError(err.response?.data?.error || "Signup failed. Please try again.");
+      trackEvent(Events.SIGNUP_FAILED, { reason: err.response?.data?.error });
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/verify-email`, {
+      const res = await axios.post(`${getPublicApiBase()}/verify-email`, {
         email,
         otp,
       });
@@ -81,6 +82,14 @@ export default function SignupPage() {
       localStorage.setItem("tenant_token", token);
       localStorage.setItem("tenant_user", JSON.stringify(user));
       localStorage.setItem("tenant_info", JSON.stringify(tenant));
+
+      identifyUser(user.email, {
+        user_id: user.id,
+        role: user.role,
+        tenant_id: tenant?.id,
+        tenant_name: tenant?.name,
+      });
+      trackEvent(Events.LOGIN_SUCCESS, { source: "signup_verify", role: user.role });
 
       if (user.role === "tenant_admin") {
         navigate("/app/dashboard");
@@ -98,7 +107,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      await axios.post(`${API_BASE}/resend-otp`, { email });
+      await axios.post(`${getPublicApiBase()}/resend-otp`, { email });
       setMessage("OTP resent successfully. Please check your inbox.");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to resend OTP.");
