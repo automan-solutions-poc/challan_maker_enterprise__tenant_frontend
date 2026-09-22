@@ -1,0 +1,50 @@
+.challans-table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.table {
+  margin-bottom: 0 !important;
+  color: var(--text-main) !important;
+}
+
+.table thead th {
+  background-color: var(--bg-main) !important;
+  color: var(--text-muted) !important;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05rem;
+  padding: 1.25rem 1rem !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.table tbody td {
+  padding: 1rem !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+@media (max-width: 768px) {
+  .challans-filter-card .row > .col-md-3 {
+    margin-bottom: 1rem;
+  }
+  .challans-filter-card .text-end {
+    text-align: left !important;
+  }
+  .challans-actions-bar {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .challans-actions-bar > div:first-child {
+    margin-bottom: 1rem;
+  }
+}
