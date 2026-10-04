@@ -1,0 +1,10 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+      "openvidstudio": {
+        "type": "local",
+        "command": ["cmd", "/c", "npx", "-y", "@openvidstudio/mcp-server"],
+        "enabled": true
+      }
+    }
+  }

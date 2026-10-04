@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { isTokenExpired } from "../utils/tokenUtils";
+import { isTenantPendingApproval } from "../utils/tenantStatus";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const token = localStorage.getItem("tenant_token");
@@ -11,6 +12,10 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   if (!token || isTokenExpired(token)) {
     localStorage.clear();
     return <Navigate to="/login" replace />;
+  }
+
+  if (isTenantPendingApproval()) {
+    return <Navigate to="/pending-approval" replace />;
   }
 
   // ✅ Check roles

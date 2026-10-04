@@ -10,11 +10,13 @@ import {
   Button,
   Alert,
   Spinner,
+  Modal,
 } from "react-bootstrap";
-import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon, Clock } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
 import { identifyUser, trackEvent, Events } from "../analytics";
+import { routeAfterTenantAuth } from "../utils/tenantStatus";
 
 export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
@@ -24,8 +26,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [pendingTenantName, setPendingTenantName] = useState("");
   const navigate = useNavigate();
   const successMessage = location.state?.message;
+
+  const goToPendingApproval = () => {
+    setShowPendingModal(false);
+    navigate("/pending-approval");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,8 +61,15 @@ export default function LoginPage() {
       });
       trackEvent(Events.LOGIN_SUCCESS, { role: user.role, tenant_id: tenant?.id });
 
-      if (user.role === "tenant_admin") navigate("/app/dashboard");
-      else navigate("/app/challans");
+      const isPending =
+        res.data.pending_approval || tenant?.status === "pending_approval";
+      if (isPending) {
+        setPendingTenantName(tenant?.name || "");
+        setShowPendingModal(true);
+        return;
+      }
+
+      routeAfterTenantAuth(tenant, user.role, navigate);
     } catch (err) {
       const data = err.response?.data || {};
       if (data.needs_verification) {
@@ -166,6 +182,33 @@ export default function LoginPage() {
           </Col>
         </Row>
       </Container>
+
+      <Modal
+        show={showPendingModal}
+        onHide={goToPendingApproval}
+        centered
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Body className="text-center p-4 p-md-5">
+          <div
+            className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
+            style={{ width: 64, height: 64, background: "rgba(245, 158, 11, 0.15)" }}
+          >
+            <Clock size={32} style={{ color: "#f59e0b" }} />
+          </div>
+          <h4 className="fw-bold mb-2">Approval pending</h4>
+          <p className="text-muted mb-0">
+            Your registration for <strong>{pendingTenantName || "your organization"}</strong> is
+            still waiting for admin approval. You will get an email once your account is activated.
+          </p>
+        </Modal.Body>
+        <Modal.Footer className="border-0 justify-content-center pb-4">
+          <Button className="login-btn px-4" onClick={goToPendingApproval}>
+            OK, view status
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

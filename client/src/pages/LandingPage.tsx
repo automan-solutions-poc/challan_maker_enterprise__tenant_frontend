@@ -45,7 +45,7 @@ const LandingPage: React.FC = () => {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#testimonials" className="hover:text-white transition-colors">Testimonials</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#free" className="hover:text-white transition-colors">Free</a>
             {/* <Link to="/admin/login" className="hover:text-white transition-colors">Admin</Link> */}
           </div>
 
@@ -217,47 +217,37 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-display">Simple, fair pricing.</h2>
-            <p className="text-zinc-500">All plans include a 14-day free trial. No hidden fees.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: 'Starter', price: '-', desc: 'Perfect for small shops', features: ['100 Challans / month', '2 Staff Accounts', 'QR Code Tracking', 'Email Support'] },
-              { name: 'Professional', price: '-', desc: 'For growing businesses', features: ['Unlimited Challans', '10 Staff Accounts', 'Full Branding', 'Priority Support', 'Analytics Dashboard'], popular: true },
-              { name: 'Enterprise', price: '-', desc: 'For multi-location chains', features: ['Unlimited Everything', 'Custom Domain', 'Dedicated Manager', 'API Access', 'SLA Guarantee'] },
-            ].map((plan, i) => (
-              <div key={i} className={`p-12 rounded-[2.5rem] border ${plan.popular ? 'bg-blue-600 border-blue-500 shadow-2xl shadow-blue-600/30 scale-105 z-10' : 'bg-zinc-900 border-zinc-800'} relative flex flex-col`}>
-                {plan.popular && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-blue-600 px-6 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">Recommended</span>
-                )}
-                <div className="mb-8">
-                  <h4 className="text-2xl font-bold mb-2 font-display">{plan.name}</h4>
-                  <p className={plan.popular ? 'text-blue-100' : 'text-zinc-500'}>{plan.desc}</p>
-                </div>
-                <div className="flex items-baseline gap-1 mb-10">
-                  <span className="text-5xl font-black font-display">${plan.price}</span>
-                  <span className={plan.popular ? 'text-blue-200' : 'text-zinc-500'}>/mo</span>
-                </div>
-                <ul className="space-y-5 mb-12 flex-grow">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-3 text-sm">
-                      <CheckCircle2 size={18} className={plan.popular ? 'text-blue-200' : 'text-emerald-500'} />
-                      <span className={plan.popular ? 'text-blue-50' : 'text-zinc-300'}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                {/* <Link to="/coming-soon" className={`w-full block text-center py-5 rounded-2xl font-bold text-lg transition-all ${
-                  plan.popular ? 'bg-white text-blue-600 hover:bg-zinc-100' : 'bg-zinc-800 text-white hover:bg-zinc-700'
-                }`}>
-                  Start Free Trial
-                </Link> */}
-              </div>
-            ))}
+      {/* Free */}
+      <section id="free" className="py-32 px-6">
+        <div className="max-w-3xl mx-auto">
+          <div className="p-12 md:p-16 rounded-[2.5rem] border border-blue-500/30 bg-gradient-to-b from-blue-600 to-blue-800 shadow-2xl shadow-blue-600/30 text-center">
+            <span className="inline-block bg-white/20 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6">
+              MVP subscription
+            </span>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-display">Free to start</h2>
+            <p className="text-blue-100 text-lg mb-10 max-w-lg mx-auto">
+              New accounts use the <strong>MVP</strong> plan — 20 PDFs per month and 2 user accounts.
+            </p>
+            <ul className="space-y-4 mb-12 text-left max-w-md mx-auto">
+              {[
+                '20 PDFs per month (MVP plan)',
+                '2 user accounts (1 admin + 1 staff)',
+                'QR code status tracking',
+                'Email notifications',
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-3 text-sm text-blue-50">
+                  <CheckCircle2 size={18} className="text-blue-200 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-zinc-100 transition-all"
+            >
+              Create free account
+              <ArrowRight size={18} />
+            </Link>
           </div>
         </div>
       </section>
@@ -345,7 +335,7 @@ const LandingPage: React.FC = () => {
               <h5 className="font-bold mb-6 uppercase text-xs tracking-widest text-zinc-400">Product</h5>
               <ul className="space-y-4 text-sm text-zinc-500">
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#free" className="hover:text-white transition-colors">Free</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">API Docs</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
               </ul>

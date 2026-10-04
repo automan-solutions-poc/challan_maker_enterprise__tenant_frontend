@@ -51,7 +51,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #adb5bd;
+  color: var(--text-muted);
 }
 
 .input-icon input {
@@ -67,7 +67,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: #adb5bd;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
