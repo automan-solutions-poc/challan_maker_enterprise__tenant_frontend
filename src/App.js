@@ -16,6 +16,10 @@ import LandingPage from "./pages/LandingPage";
 import ComingSoon from "./pages/ComingSoon";
 import SignupPage from "./pages/SignupPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import { isTokenExpired } from "./utils/tokenUtils";
+import { isTenantPendingApproval } from "./utils/tenantStatus";
 
 export default function App() {
   return (
@@ -25,6 +29,21 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
+      <Route
+        path="/pending-approval"
+        element={
+          (() => {
+            const token = localStorage.getItem("tenant_token");
+            if (!token || isTokenExpired(token)) {
+              return <Navigate to="/login" replace />;
+            }
+            if (!isTenantPendingApproval()) {
+              return <Navigate to="/app/dashboard" replace />;
+            }
+            return <PendingApprovalPage />;
+          })()
+        }
+      />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* ================================
@@ -85,7 +104,7 @@ export default function App() {
       </Route>
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

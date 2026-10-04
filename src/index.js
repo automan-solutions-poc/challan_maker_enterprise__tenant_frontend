@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./ThemeContext";
 import { AnalyticsProvider } from "./analytics";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -15,7 +16,9 @@ root.render(
     <ThemeProvider>
       <BrowserRouter>
         <AnalyticsProvider platform="tenant_web">
-          <App />
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
         </AnalyticsProvider>
       </BrowserRouter>
     </ThemeProvider>

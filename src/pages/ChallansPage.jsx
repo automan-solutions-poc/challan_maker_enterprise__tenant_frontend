@@ -29,6 +29,7 @@ import { Trash } from "lucide-react";
 import Loader from "../components/Loader";
 import "./ChallansPage.css";
 import { trackEvent, Events } from "../analytics";
+import { resolveTrustedAssetUrl } from "../utils/safeUrl";
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
@@ -280,14 +281,16 @@ const fetchChallans = async () => {
   const handleDownloadPDF = (pdfUrl, challanNo) => {
     if (!pdfUrl) return alert("PDF not available yet.");
     trackEvent(Events.CHALLAN_PDF_DOWNLOADED, { challan_no: challanNo });
-    const fullUrl = pdfUrl.startsWith("http") ? pdfUrl : `${base_url_for_img}${pdfUrl}`;
-    window.open(fullUrl, "_blank");
+    const fullUrl = resolveTrustedAssetUrl(pdfUrl, base_url_for_img);
+    if (!fullUrl) return alert("Invalid or untrusted PDF URL.");
+    window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleViewQR = (qrUrl, challanNo) => {
     if (!qrUrl) return alert("QR code not available.");
     trackEvent(Events.CHALLAN_QR_VIEWED, { challan_no: challanNo });
-    const fullUrl = qrUrl.startsWith("http") ? qrUrl : `${base_url_for_img}${qrUrl}`;
+    const fullUrl = resolveTrustedAssetUrl(qrUrl, base_url_for_img);
+    if (!fullUrl) return alert("Invalid or untrusted QR URL.");
     setQrLoading(true);
     setQrPreview(fullUrl);
   };
@@ -354,21 +357,18 @@ const fetchChallans = async () => {
         alert("Popup blocked. Allow popups for this site to print.");
         return;
       }
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print QR</title>
-            <style>
-              body, html { margin:0; padding:0; display:flex; align-items:center; justify-content:center; height:100%; }
-              img { max-width: 90%; max-height: 90vh; }
-            </style>
-          </head>
-          <body>
-            <img src="${qrPreview}" onload="setTimeout(() => { window.print(); }, 200);" />
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      const doc = printWindow.document;
+      doc.open();
+      doc.write("<!DOCTYPE html><html><head><title>Print QR</title></head><body></body></html>");
+      doc.close();
+      const style = doc.createElement("style");
+      style.textContent =
+        "body,html{margin:0;padding:0;display:flex;align-items:center;justify-content:center;height:100%;} img{max-width:90%;max-height:90vh;}";
+      doc.head.appendChild(style);
+      const img = doc.createElement("img");
+      img.src = qrPreview;
+      img.onload = () => setTimeout(() => printWindow.print(), 200);
+      doc.body.appendChild(img);
     } catch (err) {
       console.error("Print QR failed:", err);
       alert("Unable to print QR. See console for details.");

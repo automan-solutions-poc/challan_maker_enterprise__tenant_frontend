@@ -18,8 +18,8 @@ import {
 import API from "../api";
 import Loader from "../components/Loader";
 
-const PIE_COLORS = ["#f59e0b", "#22c55e", "#3b82f6", "#ef4444", "#a855f7"];
-const BAR_COLOR = "#3b82f6";
+const PIE_COLORS = ["#f59e0b", "#10b981", "#6366f1", "#ef4444", "#a855f7"];
+const BAR_COLOR = "#6366f1";
 
 const chartTooltipStyle = {
   backgroundColor: "rgba(15, 23, 42, 0.95)",
@@ -237,8 +237,8 @@ export default function TenantDashboard() {
                     cy="50%"
                     outerRadius={70}
                   >
-                    <Cell fill="#3b82f6" />
-                    <Cell fill="#334155" />
+                    <Cell fill="#6366f1" />
+                    <Cell fill="#e2e8f0" />
                   </Pie>
                   <Tooltip contentStyle={chartTooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />

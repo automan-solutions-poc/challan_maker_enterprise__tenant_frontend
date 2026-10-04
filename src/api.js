@@ -27,6 +27,14 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     trackApiError(error, { surface: "tenant_api" });
+    if (error.response?.status === 401) {
+      localStorage.removeItem("tenant_token");
+      localStorage.removeItem("tenant_user");
+      localStorage.removeItem("tenant_info");
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.href = "/login";
+      }
+    }
     return Promise.reject(error);
   }
 );

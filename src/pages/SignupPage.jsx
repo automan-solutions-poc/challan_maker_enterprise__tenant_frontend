@@ -9,6 +9,7 @@ import "./LoginPage.css";
 
 import { getPublicApiBase } from "../api";
 import { identifyUser, trackEvent, Events } from "../analytics";
+import { routeAfterTenantAuth } from "../utils/tenantStatus";
 
 export default function SignupPage() {
   const [step, setStep] = useState("form");
@@ -43,8 +44,8 @@ export default function SignupPage() {
       setError("Passwords do not match");
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters with upper, lower, number, and symbol");
       return;
     }
 
@@ -91,11 +92,7 @@ export default function SignupPage() {
       });
       trackEvent(Events.LOGIN_SUCCESS, { source: "signup_verify", role: user.role });
 
-      if (user.role === "tenant_admin") {
-        navigate("/app/dashboard");
-      } else {
-        navigate("/app/challans");
-      }
+      routeAfterTenantAuth(tenant, user.role, navigate);
     } catch (err) {
       setError(err.response?.data?.error || "Verification failed. Please try again.");
     } finally {
@@ -129,6 +126,9 @@ export default function SignupPage() {
                       <CheckCircle size={32} style={{ color: "#10b981" }} />
                     </div>
                     <h3 className="fw-bold brand-text mb-2">Verify Your Email</h3>
+                    <p className="text-muted small mb-0">
+                      After verification, your request will be sent to the admin for approval.
+                    </p>
                     <p className="text-muted small">
                       We sent a verification code to <strong>{email}</strong>
                     </p>
@@ -268,7 +268,7 @@ export default function SignupPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={6}
+                        minLength={12}
                       />
                       <button
                         type="button"
@@ -292,7 +292,7 @@ export default function SignupPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        minLength={6}
+                        minLength={12}
                       />
                     </div>
                   </Form.Group>
