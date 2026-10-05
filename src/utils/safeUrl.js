@@ -20,7 +20,8 @@ export function resolveTrustedAssetUrl(pathOrUrl, apiOrigin) {
     }
   }
 
-  if (raw.startsWith("//") || raw.toLowerCase().startsWith("javascript:")) {
+  // Protocol-relative URLs and any non-http scheme (script, data, etc.).
+  if (raw.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(raw)) {
     return null;
   }
 
