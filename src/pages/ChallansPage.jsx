@@ -286,6 +286,29 @@ const fetchChallans = async () => {
     window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleRequestDeliveredPDF = async (challan, { email = false } = {}) => {
+    if (email && !window.confirm("Email a delivered copy of this challan PDF?")) return;
+    setProcessing(true);
+    try {
+      const res = await API.post(`/challan/${challan.challan_no}/delivered_pdf`, { email });
+      const pdfUrl = res.data?.pdf_url;
+      setMsg(
+        email
+          ? res.data?.emailed
+            ? "✅ Delivered PDF emailed."
+            : "Delivered PDF is ready, but this challan has no customer email."
+          : "✅ Delivered PDF is ready."
+      );
+      fetchChallans();
+      if (!email && pdfUrl) handleDownloadPDF(pdfUrl, challan.challan_no);
+    } catch (err) {
+      console.error(err);
+      setMsg(err.response?.data?.error || "❌ Could not create the delivered PDF");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleViewQR = (qrUrl, challanNo) => {
     if (!qrUrl) return alert("QR code not available.");
     trackEvent(Events.CHALLAN_QR_VIEWED, { challan_no: challanNo });
@@ -334,18 +357,8 @@ const fetchChallans = async () => {
     }
   };
 
-  const handleResendPDF = async (challan_no) => {
-    if (!window.confirm("Resend challan PDF to customer’s email?")) return;
-    setProcessing(true);
-    try {
-      await API.put(`/challan/${challan_no}`);
-      setMsg("✅ PDF resent successfully!");
-    } catch (err) {
-      console.error(err);
-      setMsg("❌ Failed to resend PDF");
-    } finally {
-      setProcessing(false);
-    }
+  const handleResendPDF = (challan) => {
+    handleRequestDeliveredPDF(challan, { email: true });
   };
 
   // 🖨️ Print QR helper — opens a new window with only the image and triggers print
@@ -552,7 +565,14 @@ const fetchChallans = async () => {
                     />
                   </td>
                   <td>{i + 1}</td>
-                  <td onClick={() => handleDownloadPDF(c.pdf_url, c.challan_no)} style={{ cursor: "pointer" }}>
+                  <td
+                    onClick={() =>
+                      c.status === "delivered"
+                        ? handleRequestDeliveredPDF(c)
+                        : handleDownloadPDF(c.pdf_url, c.challan_no)
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
                     {c.challan_no}
                   </td>
                   <td>{c.customer_name}</td>
@@ -585,9 +605,15 @@ const fetchChallans = async () => {
                         }}
                         style={{ minWidth: "180px" }}
                       >
-                        <Dropdown.Item onClick={() => handleDownloadPDF(c.pdf_url, c.challan_no)}>
+                        <Dropdown.Item
+                          onClick={() =>
+                            c.status === "delivered"
+                              ? handleRequestDeliveredPDF(c)
+                              : handleDownloadPDF(c.pdf_url, c.challan_no)
+                          }
+                        >
                           <FileEarmarkPdf className="me-2 text-danger" />
-                          View PDF
+                          {c.status === "delivered" ? "Request delivered PDF" : "View PDF"}
                         </Dropdown.Item>
 
                         <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url, c.challan_no)}>
@@ -615,7 +641,7 @@ const fetchChallans = async () => {
                         )}
 
                         {c.status === "delivered" && (
-                          <Dropdown.Item onClick={() => handleResendPDF(c.challan_no)}>
+                          <Dropdown.Item onClick={() => handleResendPDF(c)}>
                             <Envelope className="me-2 text-primary" />
                             Resend PDF
                           </Dropdown.Item>
