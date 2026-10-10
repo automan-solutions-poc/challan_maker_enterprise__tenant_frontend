@@ -1,0 +1,141 @@
+/* Public tracking page shown after scanning a challan QR */
+.track-page {
+  min-height: 100vh;
+  background: #eef2f6;
+  color: #1e293b;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+.track-page .track-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.track-page .track-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.track-page .track-bar {
+  height: 6px;
+}
+
+.track-page .track-head {
+  padding: 20px 20px 8px;
+}
+
+.track-page .track-logo {
+  max-height: 48px;
+  max-width: 160px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.track-page h1 {
+  font-size: 1.25rem;
+  margin: 0 0 4px;
+  font-weight: 650;
+}
+
+.track-page .track-muted {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.track-page .track-badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.track-page .track-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.track-page .track-badge.delivered {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.track-page .track-section {
+  padding: 8px 20px 18px;
+}
+
+.track-page .track-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid #eef2f6;
+  font-size: 0.95rem;
+}
+
+.track-page .track-row .label {
+  color: #64748b;
+}
+
+.track-page .track-row .value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.track-page .track-section h2 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin: 16px 0 0;
+}
+
+.track-page .track-items {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.track-page .track-items li {
+  margin: 4px 0;
+}
+
+.track-page .track-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.track-page .track-photos img {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.track-page .track-foot {
+  padding: 0 20px 20px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.track-page .track-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.track-page .track-state h1 {
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.track-page .track-error {
+  padding: 20px;
+}
