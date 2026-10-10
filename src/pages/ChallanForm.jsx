@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Form, Button, Alert, Table, Spinner, Row, Col } from "react-bootstrap";
-import { Trash, Plus } from "lucide-react";
+import { Trash, Plus, X } from "lucide-react";
 import API from "../api";
 import { useNavigate, useParams } from "react-router-dom";
 import ChallanPreview from "../components/ChallanPreview";
 import Loader from "../components/Loader";
 import "./ChallanForm.css";
 import { trackEvent, Events } from "../analytics";
+import { processImageForUpload } from "../utils/imageCompress";
+
+const MAX_IMAGES = 10;
 
 export default function ChallanForm({ editMode = false }) {
   const { challan_no } = useParams();
@@ -26,7 +29,9 @@ export default function ChallanForm({ editMode = false }) {
     items: [{ description: "", quantity: 1 }],
   });
 
-  const [images, setImages] = useState([]);
+  const [photoItems, setPhotoItems] = useState([]);
+  const photoItemsRef = useRef([]);
+  const [photoError, setPhotoError] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false); // submission loading
   const [pageLoading, setPageLoading] = useState(true); // initial page loader
@@ -103,7 +108,56 @@ export default function ChallanForm({ editMode = false }) {
     setForm({ ...form, accessories });
   };
 
-  const handleFileChange = (e) => setImages(Array.from(e.target.files));
+  const handleFileChange = async (e) => {
+    const selected = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!selected.length) return;
+
+    setPhotoError("");
+    const next = [...photoItems];
+
+    for (const f of selected) {
+      const dup = next.some((p) => p.file.name === f.name && p.file.size === f.size);
+      if (dup) continue;
+      if (next.length >= MAX_IMAGES) {
+        setPhotoError(`You can attach up to ${MAX_IMAGES} images.`);
+        break;
+      }
+      const res = await processImageForUpload(f);
+      if (!res.ok) {
+        setPhotoError(res.error);
+        continue;
+      }
+      next.push({
+        id: `${Date.now()}-${Math.random()}`,
+        file: res.file,
+        name: res.file.name,
+        size: res.file.size,
+        previewUrl: URL.createObjectURL(res.file),
+      });
+    }
+
+    setPhotoItems(next);
+    photoItemsRef.current = next;
+  };
+
+  const removePhoto = (id) => {
+    setPhotoItems((prev) => {
+      const item = prev.find((p) => p.id === id);
+      if (item) URL.revokeObjectURL(item.previewUrl);
+      const next = prev.filter((p) => p.id !== id);
+      photoItemsRef.current = next;
+      return next;
+    });
+  };
+
+  // Clean up preview object URLs on unmount
+  useEffect(() => {
+    return () => {
+      photoItemsRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    };
+  }, []);
+
   const handleWarrantyChange = (value) => setForm({ ...form, warranty: value });
 
   const submit = async (e) => {
@@ -113,7 +167,7 @@ export default function ChallanForm({ editMode = false }) {
     try {
       const data = new FormData();
       data.append("data", JSON.stringify(form));
-      images.forEach((f) => data.append("images", f));
+      photoItems.forEach((p) => data.append("images", p.file));
 
       if (editMode && challan_no) {
         await API.put(`/challan/${challan_no}`, data, {
@@ -135,7 +189,7 @@ export default function ChallanForm({ editMode = false }) {
       setTimeout(() => navigate("/app/challans"), 1200);
     } catch (err) {
       console.error("Error saving challan", err);
-      setMsg("❌ Save failed. Please try again.");
+      setMsg(`❌ ${err.response?.data?.error || "Save failed. Please try again."}`);
     } finally {
       setLoading(false);
     }
@@ -318,7 +372,67 @@ export default function ChallanForm({ editMode = false }) {
                   onChange={handleFileChange}
                   disabled={loading}
                 />
-                <Form.Text className="text-muted">You can select multiple images to document device condition.</Form.Text>
+                <Form.Text className="text-muted">
+                  You can select multiple images to document device condition. Images are
+                  resized automatically on upload.
+                </Form.Text>
+
+                {photoItems.length > 0 && (
+                  <div className="d-flex align-items-center gap-2 mt-2">
+                    <Form.Text className="fw-semibold">
+                      {photoItems.length} image{photoItems.length > 1 ? "s" : ""} selected
+                    </Form.Text>
+                  </div>
+                )}
+
+                {photoItems.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2 mt-2">
+                    {photoItems.map((p) => (
+                      <div key={p.id} className="position-relative">
+                        <img
+                          src={p.previewUrl}
+                          alt={p.name}
+                          style={{
+                            width: 64,
+                            height: 64,
+                            objectFit: "cover",
+                            borderRadius: 8,
+                            border: "1px solid #dee2e6",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove image"
+                          onClick={() => removePhoto(p.id)}
+                          style={{
+                            position: "absolute",
+                            top: -6,
+                            right: -6,
+                            width: 20,
+                            height: 20,
+                            padding: 0,
+                            border: "none",
+                            borderRadius: "50%",
+                            background: "#ef4444",
+                            color: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {photoError && (
+                  <Alert variant="danger" className="mt-2 mb-0 small">
+                    {photoError}
+                  </Alert>
+                )}
               </Form.Group>
             </div>
 
