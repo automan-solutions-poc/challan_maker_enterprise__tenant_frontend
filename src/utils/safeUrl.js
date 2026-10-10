@@ -11,6 +11,11 @@ export function resolveTrustedAssetUrl(pathOrUrl, apiOrigin) {
       const u = new URL(raw);
       if (!["http:", "https:"].includes(u.protocol)) return null;
       const origin = (apiOrigin || "").replace(/\/$/, "");
+      // Stored files often use the internal host or http behind the proxy.
+      // Keep only the static path and load it from the public API origin.
+      if (origin && u.pathname.startsWith("/static/")) {
+        return `${origin}${u.pathname}${u.search}`;
+      }
       if (origin && u.origin !== origin) {
         return null;
       }

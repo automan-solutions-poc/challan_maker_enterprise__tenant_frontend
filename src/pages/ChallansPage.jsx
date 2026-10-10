@@ -309,13 +309,23 @@ const fetchChallans = async () => {
     }
   };
 
-  const handleViewQR = (qrUrl, challanNo) => {
+  const handleViewQR = async (qrUrl, challanNo) => {
     if (!qrUrl) return alert("QR code not available.");
     trackEvent(Events.CHALLAN_QR_VIEWED, { challan_no: challanNo });
     const fullUrl = resolveTrustedAssetUrl(qrUrl, base_url_for_img);
     if (!fullUrl) return alert("Invalid or untrusted QR URL.");
     setQrLoading(true);
     setQrPreview(fullUrl);
+    try {
+      const res = await API.post(`/challan/${challanNo}/refresh_qr`);
+      const fresh = resolveTrustedAssetUrl(res.data?.qr_code_url, base_url_for_img);
+      if (fresh) {
+        setQrLoading(true);
+        setQrPreview(`${fresh}${fresh.includes("?") ? "&" : "?"}v=${Date.now()}`);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleSendOTP = async (challan_no) => {
