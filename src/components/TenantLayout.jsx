@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
 import API from "../api";
+import SupportChatWidget from "./SupportChatWidget";
 import "./TenantLayout.css";
 import { resetAnalytics, trackEvent, Events } from "../analytics";
 
@@ -210,6 +211,9 @@ export default function TenantLayout() {
           <Outlet />
         </Container>
       </main>
+
+      {/* Read-only documentation assistant */}
+      <SupportChatWidget />
     </div>
   );
 }
