@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import API from "../api";
 import {
@@ -17,6 +17,13 @@ import { useTheme } from "../ThemeContext";
 import "./LoginPage.css";
 import { identifyUser, trackEvent, Events } from "../analytics";
 import { routeAfterTenantAuth } from "../utils/tenantStatus";
+import {
+  setPostAuthRedirect,
+  getPostAuthRedirect,
+  clearPostAuthRedirect,
+  resolvePostAuthTarget,
+} from "../utils/postAuthRedirect";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
@@ -30,6 +37,11 @@ export default function LoginPage() {
   const [pendingTenantName, setPendingTenantName] = useState("");
   const navigate = useNavigate();
   const successMessage = location.state?.message;
+  const intendedFrom = location.state?.from || "";
+
+  useEffect(() => {
+    if (intendedFrom) setPostAuthRedirect(intendedFrom);
+  }, [intendedFrom]);
 
   const goToPendingApproval = () => {
     setShowPendingModal(false);
@@ -66,10 +78,21 @@ export default function LoginPage() {
       if (isPending) {
         setPendingTenantName(tenant?.name || "");
         setShowPendingModal(true);
+        clearPostAuthRedirect();
         return;
       }
 
-      routeAfterTenantAuth(tenant, user.role, navigate);
+      const target = resolvePostAuthTarget({
+        intended: getPostAuthRedirect(),
+        userRole: user.role,
+        tenantStatus: tenant?.status,
+      });
+      clearPostAuthRedirect();
+      if (target) {
+        navigate(target, { replace: true });
+      } else {
+        routeAfterTenantAuth(tenant, user.role, navigate);
+      }
     } catch (err) {
       const data = err.response?.data || {};
       if (data.needs_verification) {
@@ -114,6 +137,13 @@ export default function LoginPage() {
 
                 {successMessage && <Alert variant="success">{successMessage}</Alert>}
                 {error && <Alert variant="danger">{error}</Alert>}
+
+                <GoogleSignInButton
+                  mode="login"
+                  returnTo={intendedFrom}
+                  onError={(msg) => msg && setError(msg)}
+                  disabled={loading}
+                />
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3 position-relative">

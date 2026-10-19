@@ -1,6 +1,7 @@
 // src/api.js
 import axios from "axios";
 import { trackApiError } from "./analytics";
+import { setPostAuthRedirect } from "./utils/postAuthRedirect";
 
 const baseURL =
   process.env.REACT_APP_API_URL || "http://localhost:6001/api/tenant";
@@ -56,6 +57,7 @@ API.interceptors.response.use(
       localStorage.removeItem("tenant_user");
       localStorage.removeItem("tenant_info");
       if (!window.location.pathname.startsWith("/login")) {
+        setPostAuthRedirect(window.location.pathname + window.location.search);
         window.location.href = "/login";
       }
     }

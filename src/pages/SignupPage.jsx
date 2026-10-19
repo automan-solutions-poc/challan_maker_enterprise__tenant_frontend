@@ -10,6 +10,12 @@ import "./LoginPage.css";
 import { getPublicApiBase } from "../api";
 import { identifyUser, trackEvent, Events } from "../analytics";
 import { routeAfterTenantAuth } from "../utils/tenantStatus";
+import {
+  getPostAuthRedirect,
+  clearPostAuthRedirect,
+  resolvePostAuthTarget,
+} from "../utils/postAuthRedirect";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 export default function SignupPage() {
   const [step, setStep] = useState("form");
@@ -92,7 +98,17 @@ export default function SignupPage() {
       });
       trackEvent(Events.LOGIN_SUCCESS, { source: "signup_verify", role: user.role });
 
-      routeAfterTenantAuth(tenant, user.role, navigate);
+      const target = resolvePostAuthTarget({
+        intended: getPostAuthRedirect(),
+        userRole: user.role,
+        tenantStatus: tenant?.status,
+      });
+      clearPostAuthRedirect();
+      if (target) {
+        navigate(target, { replace: true });
+      } else {
+        routeAfterTenantAuth(tenant, user.role, navigate);
+      }
     } catch (err) {
       setError(err.response?.data?.error || "Verification failed. Please try again.");
     } finally {
@@ -212,6 +228,14 @@ export default function SignupPage() {
                 </div>
 
                 {error && <Alert variant="danger">{error}</Alert>}
+
+                <GoogleSignInButton
+                  mode="signup"
+                  company={companyName}
+                  returnTo={location.state?.from || ""}
+                  onError={(msg) => msg && setError(msg)}
+                  disabled={loading}
+                />
 
                 <Form onSubmit={handleSignup}>
                   <Form.Group className="mb-3">

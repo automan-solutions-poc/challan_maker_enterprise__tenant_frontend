@@ -17,6 +17,7 @@ import ComingSoon from "./pages/ComingSoon";
 import SignupPage from "./pages/SignupPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 import TrackChallanPage from "./pages/TrackChallanPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { isTokenExpired } from "./utils/tokenUtils";
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
+      <Route path="/auth/google/callback" element={<AuthCallbackPage />} />
       <Route path="/track/:challan_no" element={<TrackChallanPage />} />
       <Route
         path="/pending-approval"

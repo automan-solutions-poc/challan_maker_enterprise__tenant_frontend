@@ -117,6 +117,64 @@
   background: var(--bg-main) !important;
 }
 
+/* Google sign-in button (Google branding guidelines) */
+.google-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  font-family: "Roboto", "Google Sans", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #3c4043;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.google-signin-btn:hover:not(:disabled) {
+  background-color: #f7f8f8;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.16);
+  border-color: #d2d4d7;
+}
+
+.google-signin-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.35);
+}
+
+.google-signin-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-muted, #9aa0a6);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1.25rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.auth-divider span {
+  padding: 0 0.75rem;
+}
+
 /* 💻 Responsive adjustments */
 @media (max-width: 576px) {
   .login-card {

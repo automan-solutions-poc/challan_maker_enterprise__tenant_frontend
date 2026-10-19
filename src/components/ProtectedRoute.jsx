@@ -11,7 +11,13 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   // ✅ Auto logout if token expired
   if (!token || isTokenExpired(token)) {
     localStorage.clear();
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+      />
+    );
   }
 
   if (isTenantPendingApproval()) {
