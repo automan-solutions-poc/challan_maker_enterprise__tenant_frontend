@@ -17,6 +17,7 @@ import ComingSoon from "./pages/ComingSoon";
 import SignupPage from "./pages/SignupPage";
 import AcceptInvitePage from "./pages/AcceptInvitePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
+import TrackChallanPage from "./pages/TrackChallanPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { isTokenExpired } from "./utils/tokenUtils";
 import { isTenantPendingApproval } from "./utils/tenantStatus";
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/accept-invite" element={<AcceptInvitePage />} />
+      <Route path="/track/:challan_no" element={<TrackChallanPage />} />
       <Route
         path="/pending-approval"
         element={
