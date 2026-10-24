@@ -1,3 +1,10 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /app/
+Disallow: /pending-approval
+Disallow: /accept-invite
+Disallow: /unauthorized
+Disallow: /track/
+
+Sitemap: https://infichallan.store/sitemap.xml

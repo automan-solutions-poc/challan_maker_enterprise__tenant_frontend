@@ -19,11 +19,14 @@ import AcceptInvitePage from "./pages/AcceptInvitePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import TrackChallanPage from "./pages/TrackChallanPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import RouteMeta from "./components/RouteMeta";
 import { isTokenExpired } from "./utils/tokenUtils";
 import { isTenantPendingApproval } from "./utils/tenantStatus";
 
 export default function App() {
   return (
+    <>
+    <RouteMeta />
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/coming-soon" element={<ComingSoon />} />
@@ -108,5 +111,6 @@ export default function App() {
       {/* Catch-all */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   );
 }

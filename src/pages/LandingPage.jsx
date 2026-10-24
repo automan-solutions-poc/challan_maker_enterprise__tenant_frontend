@@ -29,6 +29,7 @@ import {
   BellRing,
   BadgeCheck,
   Sparkles,
+  MapPin,
 } from 'lucide-react';
 import {
   motion,
@@ -41,6 +42,9 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion';
+
+const CONTACT_EMAIL = 'info@infichallan.com';
+const LOCATION = 'Nashik, Maharashtra';
 
 const NAV = [
   { href: '#product', label: 'Product' },
@@ -1128,6 +1132,8 @@ export default function LandingPage() {
         />
       </nav>
 
+      <main>
+
       <section id="top" className="relative pt-32 md:pt-40 pb-24 px-6">
         <div className="absolute inset-0 hero-bg pointer-events-none" aria-hidden="true" />
         <div className="absolute inset-0 hero-grid pointer-events-none" aria-hidden="true" />
@@ -1489,6 +1495,12 @@ export default function LandingPage() {
           <Reveal className="border-t border-[#e5e3de]">
             {FAQ.map((item) => <FaqItem key={item.q} q={item.q} a={item.a} />)}
           </Reveal>
+          <Reveal className="mt-10 text-center text-[#5b6474]">
+            Still have a question? Write to{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-[#4338ca] hover:underline underline-offset-4">
+              {CONTACT_EMAIL}
+            </a>
+          </Reveal>
         </div>
       </section>
 
@@ -1507,8 +1519,10 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
+      </main>
+
       <footer className="pt-16 pb-10 px-6 border-t border-[#ecebe7]">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-10">
+        <div className="max-w-6xl mx-auto grid sm:grid-cols-2 md:grid-cols-5 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5 mb-[1rem]">
               <div className="btn-accent w-8 h-8 rounded-lg">
@@ -1533,10 +1547,21 @@ export default function LandingPage() {
               <li><Link to="/signup" className="nav-link-lp">Create account</Link></li>
             </ul>
           </div>
+          <div>
+            <h5 className="font-semibold mb-[1rem] text-sm text-[#12141c]">Contact</h5>
+            <address className="not-italic space-y-2.5 text-sm">
+              <a href={`mailto:${CONTACT_EMAIL}`} className="nav-link-lp flex items-center gap-2 break-all">
+                <Mail size={14} className="shrink-0" /> {CONTACT_EMAIL}
+              </a>
+              <span className="flex items-center gap-2 text-[#5b6474]">
+                <MapPin size={14} className="shrink-0" /> {LOCATION}
+              </span>
+            </address>
+          </div>
         </div>
         <div className="max-w-6xl mx-auto pt-8 mt-12 border-t border-[#ecebe7] flex flex-col sm:flex-row justify-between gap-2 text-xs text-[#8a909c]">
           <span>© {new Date().getFullYear()} Challan Maker Enterprise.</span>
-          <span>Built for repair and service counters.</span>
+          <span>Built in {LOCATION}, India, for repair and service counters.</span>
         </div>
       </footer>
     </div>
