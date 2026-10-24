@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "InfiChallan",
+  "name": "InfiChallan — Service Challan Software",
+  "description": "Branded service challans, QR job tracking and OTP-verified handover for repair shops.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +19,11 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#4f46e5",
+  "background_color": "#faf9f7",
+  "lang": "en-IN",
+  "categories": ["business", "productivity"]
 }

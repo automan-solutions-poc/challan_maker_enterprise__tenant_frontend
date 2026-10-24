@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
@@ -11,8 +11,82 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta
       name="description"
-      content="InfiChallan — branded service challans, QR tracking and OTP-verified handover for repair counters."
+      content="InfiChallan is service challan and job card software for computer, laptop and printer repair shops. Create branded PDF challans, track jobs by QR code, email customers and verify every pickup with an OTP. Free to start."
     />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://infichallan.store/" />
+    <meta name="author" content="InfiChallan" />
+    <meta name="geo.region" content="IN-MH" />
+    <meta name="geo.placename" content="Nashik" />
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="InfiChallan" />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:url" content="https://infichallan.store/" />
+    <meta property="og:title" content="InfiChallan — Service challan software for repair shops" />
+    <meta property="og:description" content="Branded PDF challans, QR job tracking, customer email and OTP-verified handover for repair and service counters. Free to start." />
+    <meta property="og:image" content="https://infichallan.store/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="InfiChallan — every job in, every handover proven." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="InfiChallan — Service challan software for repair shops" />
+    <meta name="twitter:description" content="Branded PDF challans, QR job tracking, customer email and OTP-verified handover. Free to start." />
+    <meta name="twitter:image" content="https://infichallan.store/og-image.png" />
+
+    <!-- Structured data for search engines -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://infichallan.store/#organization",
+            "name": "InfiChallan",
+            "url": "https://infichallan.store/",
+            "logo": "https://infichallan.store/logo512.png",
+            "email": "info@infichallan.com",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Nashik",
+              "addressRegion": "Maharashtra",
+              "addressCountry": "IN"
+            },
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "info@infichallan.com",
+              "contactType": "customer support",
+              "areaServed": "IN"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://infichallan.store/#website",
+            "url": "https://infichallan.store/",
+            "name": "InfiChallan",
+            "inLanguage": "en-IN",
+            "publisher": { "@id": "https://infichallan.store/#organization" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "InfiChallan",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, Windows",
+            "url": "https://infichallan.store/",
+            "description": "Service challan and job card software for repair shops: branded PDF challans, QR code tracking, customer email and OTP-verified delivery.",
+            "offers": {
+              "@type": "Offer",
+              "name": "MVP plan",
+              "price": "0",
+              "priceCurrency": "INR",
+              "description": "20 PDFs per month, 2 users"
+            },
+            "publisher": { "@id": "https://infichallan.store/#organization" }
+          }
+        ]
+      }
+    </script>
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -31,7 +105,7 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>InfiChallan</title>
+    <title>InfiChallan — Service Challan &amp; Job Card Software for Repair Shops</title>
     <script>
       /* Apply the saved or system theme before first paint to avoid a flash. */
       (function () {
@@ -46,7 +120,15 @@
     </script>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <h1>InfiChallan — service challan software for repair shops</h1>
+      <p>
+        Create branded PDF challans, track every job with a QR code, email customers and verify
+        each pickup with a one-time code. Free to start with 20 PDFs a month.
+      </p>
+      <p>Contact: <a href="mailto:info@infichallan.com">info@infichallan.com</a> · Nashik, Maharashtra, India</p>
+      <p>Please enable JavaScript to use the InfiChallan workspace.</p>
+    </noscript>
     <div id="root"></div>
     <!--
       This HTML file is a template.
