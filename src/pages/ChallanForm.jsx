@@ -140,7 +140,7 @@ export default function ChallanForm({ editMode = false }) {
     try {
       const data = new FormData();
       data.append("data", JSON.stringify(form));
-      photoItems.forEach((p) => data.append("images", p.file));
+      images.forEach((f) => data.append("images", f));
 
       if (editMode && challan_no) {
         await API.put(`/challan/${challan_no}`, data, {
