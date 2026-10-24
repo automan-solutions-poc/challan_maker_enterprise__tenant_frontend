@@ -21,6 +21,7 @@ export const Events = {
   EMAIL_TEST_FAILED: "Test Email Failed",
   DESIGN_SETTINGS_SAVED: "Design Settings Saved",
   LOGO_UPLOADED: "Logo Uploaded",
+  LOGO_DELETED: "Logo Deleted",
   TERMS_SAVED: "Terms Saved",
   TEAM_USER_CREATED: "Team User Created",
   TEAM_USER_UPDATED: "Team User Updated",

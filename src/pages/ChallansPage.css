@@ -1,50 +1,175 @@
-.challans-table-responsive {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  background: var(--bg-card);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
+.challans-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.table {
-  margin-bottom: 0 !important;
-  color: var(--text-main) !important;
+.challans-search {
+  flex: 1 1 260px;
+  min-width: 220px;
 }
 
-.table thead th {
-  background-color: var(--bg-main) !important;
-  color: var(--text-muted) !important;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05rem;
-  padding: 1.25rem 1rem !important;
-  border-bottom: 1px solid var(--border-color) !important;
+.challans-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.table tbody td {
-  padding: 1rem !important;
-  border-bottom: 1px solid var(--border-color) !important;
+.challans-dates .form-control {
+  width: 150px;
 }
 
-.table-hover tbody tr:hover {
-  background-color: rgba(99, 102, 241, 0.05) !important;
+.segmented-count {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  background: var(--bg-hover);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 768px) {
-  .challans-filter-card .row > .col-md-3 {
-    margin-bottom: 1rem;
+.segmented button[aria-pressed="true"] .segmented-count {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 1rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--accent-text);
+  font-size: 0.85rem;
+  animation: bulk-in 0.25s var(--ease) both;
+}
+
+@keyframes bulk-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
   }
-  .challans-filter-card .text-end {
-    text-align: left !important;
+  to {
+    opacity: 1;
+    transform: none;
   }
-  .challans-actions-bar {
-    flex-direction: column;
-    align-items: flex-start !important;
+}
+
+.challans-table {
+  min-width: 860px;
+}
+
+.challan-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.challan-link:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cell-problem {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.qr-frame {
+  display: inline-block;
+  padding: 0.75rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e3de;
+}
+
+.qr-frame img {
+  max-width: 220px;
+}
+
+@media (max-width: 767.98px) {
+  .challans-toolbar {
+    padding: 0.85rem;
   }
-  .challans-actions-bar > div:first-child {
-    margin-bottom: 1rem;
+
+  .challans-toolbar .segmented {
+    width: 100%;
+    overflow-x: auto;
   }
+
+  .challans-toolbar .segmented button {
+    flex: 1;
+  }
+
+  .challans-dates {
+    width: 100%;
+  }
+
+  .challans-dates .form-control {
+    width: auto;
+    flex: 1;
+  }
+}
+
+/* Mobile card list (replaces the table under 768px) */
+.challan-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.challan-card {
+  padding: 0.9rem 1rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.challan-card.is-selected {
+  background: var(--accent-soft);
+}
+
+.challan-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.challan-card-top .form-check {
+  margin: 0;
+  min-height: 0;
+}
+
+.challan-card-problem {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-body);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

@@ -1,19 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Alert,
-  Spinner,
-} from "react-bootstrap";
-import { Zap, User, Lock, Eye, EyeOff, Building2 } from "lucide-react";
+import { Form, Button, Alert, Spinner } from "react-bootstrap";
+import { User, Building2, AlertCircle, Link2Off } from "lucide-react";
 import { getPublicApiBase } from "../api";
-import "./LoginPage.css";
+import AuthShell from "../components/AuthShell";
+import PasswordField from "../components/PasswordField";
 import { trackEvent, Events } from "../analytics";
 
 export default function AcceptInvitePage() {
@@ -89,126 +81,121 @@ export default function AcceptInvitePage() {
     }
   };
 
+  const footer = (
+    <>
+      Already have an account? <Link to="/login">Sign in</Link>
+    </>
+  );
+
+  if (loading) {
+    return (
+      <AuthShell footer={footer}>
+        <div className="app-loader">
+          <span className="app-spinner" aria-hidden="true" />
+          <span>Checking your invite…</span>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (!tenantName) {
+    return (
+      <AuthShell
+        icon={<Link2Off size={24} />}
+        iconTone="danger"
+        title="Invite unavailable"
+        subtitle={error || "This invite link is invalid or has expired."}
+        footer={footer}
+      >
+        <p className="text-muted small text-center mb-0">
+          Ask your shop admin to send a fresh invite from the Team page.
+        </p>
+      </AuthShell>
+    );
+  }
+
   return (
-    <div className="login-page">
-      <Container fluid className="h-100 d-flex justify-content-center align-items-center">
-        <Row className="justify-content-center w-100">
-          <Col md={5} sm={10}>
-            <Card className="login-card shadow-lg border-0">
-              <Card.Body className="p-4 p-md-5">
-                <div className="text-center mb-4">
-                  <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
-                    <Zap size={32} fill="currentColor" />
-                  </div>
-                  <h2 className="fw-bold brand-text mb-1">Set up your account</h2>
-                  <p className="text-muted small">Create your admin login for InfiChallan</p>
-                </div>
+    <AuthShell
+      title="Set up your account"
+      subtitle="You've been invited to an infiChallan workspace."
+      footer={footer}
+    >
+      <div className="usage-card d-flex align-items-center gap-3 mb-4">
+        <div className="icon-tile" style={{ width: 36, height: 36, borderRadius: 10 }}>
+          <Building2 size={17} />
+        </div>
+        <div className="min-w-0">
+          <div className="small text-muted">Organization</div>
+          <div className="fw-semibold text-truncate" style={{ color: "var(--text-main)" }}>{tenantName}</div>
+        </div>
+      </div>
 
-                {loading && (
-                  <div className="text-center py-4">
-                    <Spinner animation="border" />
-                  </div>
-                )}
+      {error && (
+        <Alert variant="danger">
+          <AlertCircle size={16} className="flex-shrink-0 mt-1" /> <span>{error}</span>
+        </Alert>
+      )}
 
-                {!loading && error && !tenantName && (
-                  <Alert variant="danger">{error}</Alert>
-                )}
+      <Form onSubmit={handleSubmit}>
+        <Form.Group className="mb-3" controlId="invite-email">
+          <Form.Label>Email</Form.Label>
+          <Form.Control type="email" value={email} readOnly disabled />
+        </Form.Group>
 
-                {!loading && tenantName && (
-                  <>
-                    <Alert variant="info" className="small">
-                      <Building2 size={16} className="me-2" />
-                      Organization: <strong>{tenantName}</strong>
-                    </Alert>
+        <Form.Group className="mb-3" controlId="invite-name">
+          <Form.Label>Your name</Form.Label>
+          <div className="input-with-icon">
+            <User size={16} className="input-icon" />
+            <Form.Control
+              type="text"
+              placeholder="Full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+              autoFocus
+              required
+            />
+          </div>
+        </Form.Group>
 
-                    {error && <Alert variant="danger">{error}</Alert>}
+        <Form.Group className="mb-3">
+          <Form.Label htmlFor="invite-password">Password</Form.Label>
+          <PasswordField
+            id="invite-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 6 characters"
+            minLength={6}
+            autoComplete="new-password"
+            visible={showPassword}
+            onToggleVisible={() => setShowPassword((v) => !v)}
+          />
+        </Form.Group>
 
-                    <Form onSubmit={handleSubmit}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold small">Email</Form.Label>
-                        <Form.Control type="email" value={email} readOnly disabled />
-                      </Form.Group>
+        <Form.Group className="mb-4">
+          <Form.Label htmlFor="invite-confirm">Confirm password</Form.Label>
+          <PasswordField
+            id="invite-confirm"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repeat password"
+            minLength={6}
+            autoComplete="new-password"
+            visible={showPassword}
+            onToggleVisible={() => setShowPassword((v) => !v)}
+          />
+        </Form.Group>
 
-                      <Form.Group className="mb-3 position-relative">
-                        <Form.Label className="fw-semibold small">Your name</Form.Label>
-                        <div className="input-icon">
-                          <User size={18} className="input-icon-left" />
-                          <Form.Control
-                            type="text"
-                            placeholder="Full name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </Form.Group>
-
-                      <Form.Group className="mb-3 position-relative">
-                        <Form.Label className="fw-semibold small">Password</Form.Label>
-                        <div className="input-icon">
-                          <Lock size={18} className="input-icon-left" />
-                          <Form.Control
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                          />
-                          <button
-                            type="button"
-                            className="input-icon-right btn btn-link p-0"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label="Toggle password"
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </Form.Group>
-
-                      <Form.Group className="mb-4 position-relative">
-                        <Form.Label className="fw-semibold small">Confirm password</Form.Label>
-                        <div className="input-icon">
-                          <Lock size={18} className="input-icon-left" />
-                          <Form.Control
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            minLength={6}
-                          />
-                        </div>
-                      </Form.Group>
-
-                      <Button
-                        type="submit"
-                        className="w-100 py-2 fw-semibold"
-                        disabled={submitting}
-                      >
-                        {submitting ? (
-                          <>
-                            <Spinner size="sm" animation="border" className="me-2" />
-                            Creating account...
-                          </>
-                        ) : (
-                          "Create account"
-                        )}
-                      </Button>
-                    </Form>
-                  </>
-                )}
-
-                <div className="text-center mt-4">
-                  <Link to="/login" className="small text-muted text-decoration-none">
-                    Already have an account? Sign in
-                  </Link>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </div>
+        <Button type="submit" className="w-100 btn-lg" disabled={submitting}>
+          {submitting ? (
+            <>
+              <Spinner size="sm" animation="border" /> Creating account…
+            </>
+          ) : (
+            "Create account"
+          )}
+        </Button>
+      </Form>
+    </AuthShell>
   );
 }

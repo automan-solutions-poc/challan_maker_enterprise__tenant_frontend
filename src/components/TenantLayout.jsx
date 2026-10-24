@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Container, Nav, Button } from "react-bootstrap";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -8,209 +7,217 @@ import {
   Palette,
   Mail,
   Users,
+  ScrollText,
   LogOut,
   Menu,
-  Sun,
-  Moon,
-  Zap,
+  X,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import { useTheme } from "../ThemeContext";
 import API from "../api";
+import ThemeToggle from "./ThemeToggle";
 import SupportChatWidget from "./SupportChatWidget";
 import "./TenantLayout.css";
 import { resetAnalytics, trackEvent, Events } from "../analytics";
+import { clearSession, getStoredTenant, getStoredUser, initialsOf } from "../utils/session";
+
+const WORKSPACE_LINKS = [
+  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/app" || p === "/app/" },
+  { to: "/app/challans", label: "Challans", icon: FileText, match: (p) => /^\/app\/challan\/[^/]+\/edit/.test(p) },
+  { to: "/app/challan/new", label: "New challan", icon: PlusCircle },
+];
+
+const ADMIN_LINKS = [
+  { to: "/app/users", label: "Team", icon: Users },
+  { to: "/app/settings", label: "Design settings", icon: Palette },
+  { to: "/app/email-settings", label: "Email settings", icon: Mail },
+  { to: "/app/terms", label: "Terms & conditions", icon: ScrollText },
+];
+
+const COLLAPSE_KEY = "tenant_sidebar_collapsed";
 
 export default function TenantLayout() {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isOpen, setOpen] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [usage, setUsage] = useState(null);
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("tenant_user") || "null");
+  const { pathname } = useLocation();
+  const user = getStoredUser();
+  const tenant = getStoredTenant();
+  const isAdmin = user?.role === "tenant_admin";
+
+  // Refresh the quota whenever the user moves between pages (e.g. after creating a challan).
+  useEffect(() => {
+    let cancelled = false;
+    API.get("/dashboard")
+      .then((res) => {
+        if (!cancelled && res.data?.usage) setUsage(res.data.usage);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   useEffect(() => {
-    API.get("/dashboard").then((res) => {
-      if (res.data?.usage) setUsage(res.data.usage);
-    }).catch(() => {});
-  }, []);
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  const toggleCollapsed = () => {
+    setCollapsed((value) => {
+      try {
+        localStorage.setItem(COLLAPSE_KEY, value ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !value;
+    });
+  };
 
   const logout = () => {
     trackEvent(Events.LOGOUT, { role: user?.role });
     resetAnalytics();
-    localStorage.removeItem("tenant_token");
-    localStorage.removeItem("tenant_user");
-    localStorage.removeItem("tenant_info");
+    clearSession();
     navigate("/login");
   };
 
-  const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
+  const hasLimit = usage && usage.limit != null && usage.limit !== -1;
+  const usedPct = hasLimit ? Math.min(((usage.used || 0) / Math.max(usage.limit, 1)) * 100, 100) : 0;
+  const atLimit = hasLimit && usage.used >= usage.limit;
+
+  const renderLink = ({ to, label, icon: Icon, match }) => (
+    <NavLink
+      key={to}
+      to={to}
+      title={isCollapsed ? label : undefined}
+      className={({ isActive }) => `side-link ${isActive || match?.(pathname) ? "is-active" : ""}`}
+    >
+      <Icon size={18} className="side-link-icon" />
+      <span className="side-text">{label}</span>
+    </NavLink>
+  );
 
   return (
-    <div className="tenant-layout">
-      <button className="sidebar-toggle" onClick={toggleSidebar}>
-        <Menu size={20} />
-      </button>
-
-      {/* Backdrop overlay for mobile */}
-      {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
-
-      {/* Sidebar */}
-      <aside
-        className={`tenant-sidebar ${isSidebarOpen ? "is-open" : ""} ${isSidebarCollapsed ? "is-collapsed" : ""}`}
-      >
-        <div className="d-flex flex-column h-100">
-          {/* Company Header */}
-          <div className="tenant-header px-4 py-4 d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-3 overflow-hidden">
-              <div className="tenant-logo d-flex align-items-center justify-content-center shadow-sm flex-shrink-0">
-                <Zap size={20} fill="currentColor" />
-              </div>
-              <div className="overflow-hidden sidebar-text">
-                <h5 className="tenant-name mb-0 fw-bold">InfiChallan</h5>
-                <small className="text-muted text-uppercase tracking-wider" style={{ fontSize: '9px', fontWeight: '700' }}>Enterprise Edition</small>
-              </div>
-            </div>
-
-            <Button
-              variant="link"
-              className="text-muted p-0 d-none d-md-flex align-items-center justify-content-center sidebar-collapse-toggle"
-              onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-            >
-              {isSidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-            </Button>
+    <div className={`app-shell ${isCollapsed ? "is-collapsed" : ""}`}>
+      <aside className={`sidebar ${isOpen ? "is-open" : ""}`} aria-label="Main navigation">
+        <div className="sidebar-brand">
+          <div className="brand-mark">
+            <FileText size={17} />
           </div>
+          <div className="side-text sidebar-brand-text">
+            <div className="sidebar-brand-name">infiChallan</div>
+            <div className="sidebar-brand-sub" title={tenant?.name || ""}>
+              {tenant?.name || "Tenant workspace"}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="sidebar-icon-btn d-none d-md-inline-flex ms-auto"
+            onClick={toggleCollapsed}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+          </button>
+          <button
+            type="button"
+            className="sidebar-icon-btn d-md-none ms-auto"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-          <Nav className="tenant-nav flex-column">
-            <Nav.Link
-              as={NavLink}
-              to="/app/dashboard"
-              className="tenant-link"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <LayoutDashboard size={18} className="sidebar-icon" /><span className="sidebar-text">Dashboard</span>
-            </Nav.Link>
+        <nav className="sidebar-nav">
+          <div className="side-section side-text">Workspace</div>
+          {WORKSPACE_LINKS.map(renderLink)}
+          {isAdmin && (
+            <>
+              <div className="side-section side-text">Administration</div>
+              {ADMIN_LINKS.map(renderLink)}
+            </>
+          )}
+        </nav>
 
-            <Nav.Link
-              as={NavLink}
-              to="/app/challans"
-              className="tenant-link"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Challans</span>
-            </Nav.Link>
-
-            <Nav.Link
-              as={NavLink}
-              to="/app/challan/new"
-              className="tenant-link"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <PlusCircle size={18} className="sidebar-icon" /><span className="sidebar-text">New Challan</span>
-            </Nav.Link>
-
-            {/* Admin-only links */}
-            {user?.role === "tenant_admin" && <div className="nav-section-title mt-3 mb-1 sidebar-text">ADMINISTRATION</div>}
-            {user?.role === "tenant_admin" && (
-              <Nav.Link
-                as={NavLink}
-                to="/app/users"
-                className="tenant-link"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Users size={18} className="sidebar-icon" /><span className="sidebar-text">Team</span>
-              </Nav.Link>
-            )}
-            {user?.role === "tenant_admin" && (
-              <Nav.Link
-                as={NavLink}
-                to="/app/settings"
-                className="tenant-link"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Palette size={18} className="sidebar-icon" /><span className="sidebar-text">Design Settings</span>
-              </Nav.Link>
-            )}
-            {user?.role === "tenant_admin" && (
-              <Nav.Link
-                as={NavLink}
-                to="/app/email-settings"
-                className="tenant-link"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Mail size={18} className="sidebar-icon" /><span className="sidebar-text">Email Settings</span>
-              </Nav.Link>
-            )}
-            {user?.role === "tenant_admin" && (
-              <Nav.Link
-                as={NavLink}
-                to="/app/terms"
-                className="tenant-link"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <FileText size={18} className="sidebar-icon" /><span className="sidebar-text">Terms & Conditions</span>
-              </Nav.Link>
-            )}
-          </Nav>
-
-          <div className="tenant-footer p-3">
-            <div className="mb-3 px-2">
-              <div className="d-flex align-items-center gap-2 mb-3">
-                 <div className="bg-primary rounded-circle flex-shrink-0" style={{ width: '8px', height: '8px' }}></div>
-                 <small className="text-muted fw-semibold sidebar-text">Logged in as {user?.name || 'User'}</small>
+        <div className="sidebar-foot">
+          {usage && (
+            <div className="usage-card side-text">
+              <div className="d-flex justify-content-between align-items-baseline mb-2">
+                <span className="usage-label">PDFs this month</span>
+                <span className={`usage-value tabular-nums ${atLimit ? "text-danger" : ""}`}>
+                  {hasLimit ? `${usage.used ?? 0} / ${usage.limit}` : "Unlimited"}
+                </span>
               </div>
-              {usage && (
-                <div className="usage-badge px-3 py-2 rounded-3 mb-2" style={{ background: 'var(--bs-tertiary-bg)' }}>
-                  <div className="d-flex align-items-center justify-content-between small">
-                    <span className="text-muted sidebar-text">PDF Limit</span>
-                    <span className="fw-bold" style={usage.limit === -1 ? { color: 'var(--bs-success)' } : {}}>
-                      {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
-                    </span>
-                  </div>
-                  {usage.limit !== -1 && usage.limit != null && (
-                    <div className="progress mt-1" style={{ height: '4px', background: 'var(--bs-tertiary-bg)' }}>
-                      <div className="progress-bar" role="progressbar"
-                        style={{
-                          width: `${Math.min((usage.used / usage.limit) * 100, 100)}%`,
-                          background: usage.used >= usage.limit ? 'var(--bs-danger)' : 'var(--bs-primary)',
-                        }}
-                      />
-                    </div>
-                  )}
+              {hasLimit && (
+                <div className={`meter ${atLimit ? "is-full" : ""}`}>
+                  <span style={{ width: `${usedPct}%` }} />
                 </div>
               )}
-              <Button
-                variant="link"
-                className="theme-toggle-btn w-100 d-flex align-items-center justify-content-start p-2 text-decoration-none"
-                onClick={toggleTheme}
-              >
-                {theme === "light" ? (
-                  <><Moon size={18} className="sidebar-icon" /><span className="sidebar-text">Dark Mode</span></>
-                ) : (
-                  <><Sun size={18} className="sidebar-icon" /><span className="sidebar-text">Light Mode</span></>
-                )}
-              </Button>
             </div>
-            <Button
-              variant="outline-danger"
-              className="logout-btn w-100 d-flex align-items-center justify-content-center py-2"
-              onClick={logout}
-              style={{ borderRadius: '12px' }}
-            >
-              <LogOut size={16} className="sidebar-icon" /><span className="sidebar-text">Logout</span>
-            </Button>
+          )}
+
+          <div className="user-row">
+            <div className="avatar" title={user?.name || "User"}>{initialsOf(user?.name)}</div>
+            <div className="side-text user-meta">
+              <div className="user-name">{user?.name || "User"}</div>
+              <div className="user-role">{isAdmin ? "Admin" : "Staff"}</div>
+            </div>
+            <div className="user-actions">
+              <ThemeToggle className="sidebar-icon-btn" />
+              <button
+                type="button"
+                className="sidebar-icon-btn is-danger"
+                onClick={logout}
+                aria-label="Log out"
+                title="Log out"
+              >
+                <LogOut size={17} />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className={`tenant-content ${isSidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-        <Container fluid className="p-4">
+      {isOpen && <div className="sidebar-backdrop" onClick={() => setOpen(false)} aria-hidden="true" />}
+
+      <div className="app-main">
+        <header className="app-topbar">
+          <button
+            type="button"
+            className="sidebar-icon-btn"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={isOpen}
+          >
+            <Menu size={20} />
+          </button>
+          <div className="d-flex align-items-center gap-2">
+            <div className="brand-mark" style={{ width: 28, height: 28, borderRadius: 8 }}>
+              <FileText size={14} />
+            </div>
+            <span className="sidebar-brand-name">infiChallan</span>
+          </div>
+          <ThemeToggle className="sidebar-icon-btn" />
+        </header>
+
+        <main className="app-content">
           <Outlet />
-        </Container>
-      </main>
+        </main>
+      </div>
 
       {/* Read-only documentation assistant */}
       <SupportChatWidget />

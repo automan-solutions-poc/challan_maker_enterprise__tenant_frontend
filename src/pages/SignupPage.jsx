@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import {
-  Container, Row, Col, Card, Form, Button, Alert, Spinner,
-} from "react-bootstrap";
-import { Zap, Mail, Lock, Eye, EyeOff, Building2, User, ArrowRight, CheckCircle } from "lucide-react";
-import "./LoginPage.css";
+import { Form, Button, Alert, Spinner, Row, Col } from "react-bootstrap";
+import { Mail, Building2, User, ArrowRight, MailCheck, AlertCircle, CheckCircle2 } from "lucide-react";
+import AuthShell from "../components/AuthShell";
+import PasswordField from "../components/PasswordField";
 
 import { getPublicApiBase } from "../api";
 import { identifyUser, trackEvent, Events } from "../analytics";
 import { routeAfterTenantAuth } from "../utils/tenantStatus";
+
+const MIN_PASSWORD = 12;
 
 export default function SignupPage() {
   const [step, setStep] = useState("form");
@@ -36,6 +37,8 @@ export default function SignupPage() {
     }
   }, [needsVerification, prefillEmail]);
 
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
@@ -44,8 +47,8 @@ export default function SignupPage() {
       setError("Passwords do not match");
       return;
     }
-    if (password.length < 12) {
-      setError("Password must be at least 12 characters with upper, lower, number, and symbol");
+    if (password.length < MIN_PASSWORD) {
+      setError(`Password must be at least ${MIN_PASSWORD} characters with upper, lower, number, and symbol`);
       return;
     }
 
@@ -105,7 +108,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await axios.post(`${getPublicApiBase()}/resend-otp`, { email });
-      setMessage("OTP resent successfully. Please check your inbox.");
+      setMessage("A new code is on its way. Please check your inbox.");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to resend OTP.");
     } finally {
@@ -113,218 +116,168 @@ export default function SignupPage() {
     }
   };
 
+  const errorAlert = error && (
+    <Alert variant="danger">
+      <AlertCircle size={16} className="flex-shrink-0 mt-1" /> <span>{error}</span>
+    </Alert>
+  );
+
   if (step === "verify") {
     return (
-      <div className="login-page">
-        <Container fluid className="h-100 d-flex justify-content-center align-items-center">
-          <Row className="justify-content-center w-100">
-            <Col md={4} sm={8}>
-              <Card className="login-card shadow-lg border-0">
-                <Card.Body className="p-4 p-md-5">
-                  <div className="text-center mb-4">
-                    <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
-                      <CheckCircle size={32} style={{ color: "#10b981" }} />
-                    </div>
-                    <h3 className="fw-bold brand-text mb-2">Verify Your Email</h3>
-                    <p className="text-muted small mb-0">
-                      After verification, your request will be sent to the admin for approval.
-                    </p>
-                    <p className="text-muted small">
-                      We sent a verification code to <strong>{email}</strong>
-                    </p>
-                  </div>
+      <AuthShell
+        icon={<MailCheck size={24} />}
+        iconTone="success"
+        title="Check your inbox"
+        subtitle={
+          <>
+            We sent a 6-digit code to <strong className="text-body">{email}</strong>. After
+            verification, your request goes to the admin for approval.
+          </>
+        }
+        footer={<Link to="/login">Back to sign in</Link>}
+      >
+        {errorAlert}
+        {message && !error && (
+          <Alert variant="success">
+            <CheckCircle2 size={16} className="flex-shrink-0 mt-1" /> <span>{message}</span>
+          </Alert>
+        )}
 
-                  {error && <Alert variant="danger">{error}</Alert>}
-                  {message && <Alert variant="success">{message}</Alert>}
+        <Form onSubmit={handleVerify}>
+          <Form.Group className="mb-4" controlId="signup-otp">
+            <Form.Label>Verification code</Form.Label>
+            <Form.Control
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="••••••"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              maxLength={6}
+              autoFocus
+              required
+              className="otp-input"
+            />
+          </Form.Group>
 
-                  <Form onSubmit={handleVerify}>
-                    <Form.Group className="mb-4">
-                      <Form.Label className="fw-semibold small">OTP Code</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter 6-digit OTP"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        maxLength={6}
-                        required
-                        className="text-center fs-4 fw-bold"
-                      />
-                    </Form.Group>
+          <Button type="submit" className="w-100 btn-lg" disabled={loading || otp.length !== 6}>
+            {loading ? <Spinner animation="border" size="sm" /> : "Verify and continue"}
+          </Button>
+        </Form>
 
-                    <Button
-                      type="submit"
-                      className="w-100 login-btn py-2 fw-bold mt-3"
-                      disabled={loading || otp.length !== 6}
-                    >
-                      {loading ? (
-                        <Spinner animation="border" size="sm" />
-                      ) : (
-                        <>Verify & Activate Account</>
-                      )}
-                    </Button>
-                  </Form>
-
-                  <div className="text-center mt-4">
-                    <button
-                      type="button"
-                      className="btn btn-link text-decoration-none small"
-                      onClick={handleResendOtp}
-                      disabled={loading}
-                    >
-                      Resend OTP
-                    </button>
-                  </div>
-
-                  <div className="text-center mt-4 text-muted small">
-                    <Link to="/login" className="text-decoration-none">
-                      ← Back to Login
-                    </Link>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
-      </div>
+        <div className="text-center mt-3">
+          <Button variant="link" size="sm" onClick={handleResendOtp} disabled={loading}>
+            Didn&apos;t get it? Resend code
+          </Button>
+        </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="login-page">
-      <Container fluid className="h-100 d-flex justify-content-center align-items-center">
-        <Row className="justify-content-center w-100">
-          <Col md={4} sm={8}>
-            <Card className="login-card shadow-lg border-0">
-              <Card.Body className="p-4 p-md-5">
-                <div className="text-center mb-2">
-                  <Link to="/" className="text-decoration-none small text-muted">
-                    ← Back to Home
-                  </Link>
-                </div>
-                <div className="text-center mb-5">
-                  <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
-                    <Zap size={32} fill="currentColor" />
-                  </div>
-                  <h2 className="fw-bold brand-text mb-1">Create Account</h2>
-                  <p className="text-muted small text-uppercase tracking-wider">
-                    Start your free trial
-                  </p>
-                </div>
+    <AuthShell
+      wide
+      title="Create your workspace"
+      subtitle="Free to start. Your shop is reviewed before the workspace opens."
+      footer={
+        <>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </>
+      }
+    >
+      {errorAlert}
 
-                {error && <Alert variant="danger">{error}</Alert>}
-
-                <Form onSubmit={handleSignup}>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold small">
-                      <Building2 size={14} className="me-1" /> Company Name
-                    </Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Your Company"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      required
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold small">
-                      <User size={14} className="me-1" /> Your Name
-                    </Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="John Doe"
-                      value={adminName}
-                      onChange={(e) => setAdminName(e.target.value)}
-                      required
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold small">
-                      <Mail size={14} className="me-1" /> Email
-                    </Form.Label>
-                    <div className="input-icon">
-                      <Mail size={18} className="input-icon-left" />
-                      <Form.Control
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold small">
-                      <Lock size={14} className="me-1" /> Password
-                    </Form.Label>
-                    <div className="input-icon">
-                      <Lock size={18} className="input-icon-left" />
-                      <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        placeholder="At least 6 characters"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={12}
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold small">
-                      <Lock size={14} className="me-1" /> Confirm Password
-                    </Form.Label>
-                    <div className="input-icon">
-                      <Lock size={18} className="input-icon-left" />
-                      <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Repeat password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        minLength={12}
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Button
-                    type="submit"
-                    className="w-100 login-btn py-2 fw-bold mt-3"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Spinner animation="border" size="sm" />
-                    ) : (
-                      <>
-                        Create Account <ArrowRight size={16} className="ms-2" />
-                      </>
-                    )}
-                  </Button>
-                </Form>
-
-                <div className="text-center mt-4">
-                  <span className="text-muted small">
-                    Already have an account?{" "}
-                    <Link to="/login" className="fw-bold text-decoration-none">
-                      Sign In
-                    </Link>
-                  </span>
-                </div>
-              </Card.Body>
-            </Card>
+      <Form onSubmit={handleSignup}>
+        <Row className="g-3 mb-3">
+          <Col sm={6}>
+            <Form.Group controlId="signup-company">
+              <Form.Label>Company name</Form.Label>
+              <div className="input-with-icon">
+                <Building2 size={16} className="input-icon" />
+                <Form.Control
+                  type="text"
+                  placeholder="Your company"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  autoComplete="organization"
+                  required
+                />
+              </div>
+            </Form.Group>
+          </Col>
+          <Col sm={6}>
+            <Form.Group controlId="signup-name">
+              <Form.Label>Your name</Form.Label>
+              <div className="input-with-icon">
+                <User size={16} className="input-icon" />
+                <Form.Control
+                  type="text"
+                  placeholder="Full name"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  autoComplete="name"
+                  required
+                />
+              </div>
+            </Form.Group>
           </Col>
         </Row>
-      </Container>
-    </div>
+
+        <Form.Group className="mb-3" controlId="signup-email">
+          <Form.Label>Work email</Form.Label>
+          <div className="input-with-icon">
+            <Mail size={16} className="input-icon" />
+            <Form.Control
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </div>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label htmlFor="signup-password">Password</Form.Label>
+          <PasswordField
+            id="signup-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={`At least ${MIN_PASSWORD} characters`}
+            minLength={MIN_PASSWORD}
+            autoComplete="new-password"
+            visible={showPassword}
+            onToggleVisible={() => setShowPassword((v) => !v)}
+          />
+          <Form.Text>Use upper and lower case letters, a number, and a symbol.</Form.Text>
+        </Form.Group>
+
+        <Form.Group className="mb-4">
+          <Form.Label htmlFor="signup-confirm">Confirm password</Form.Label>
+          <PasswordField
+            id="signup-confirm"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repeat password"
+            minLength={MIN_PASSWORD}
+            autoComplete="new-password"
+            visible={showPassword}
+            onToggleVisible={() => setShowPassword((v) => !v)}
+          />
+          {passwordsMismatch && <Form.Text className="text-danger">Passwords don&apos;t match yet.</Form.Text>}
+        </Form.Group>
+
+        <Button type="submit" className="w-100 btn-lg" disabled={loading}>
+          {loading ? (
+            <Spinner animation="border" size="sm" />
+          ) : (
+            <>
+              Create account <ArrowRight size={16} />
+            </>
+          )}
+        </Button>
+      </Form>
+    </AuthShell>
   );
 }

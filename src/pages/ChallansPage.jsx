@@ -1,343 +1,380 @@
 // src/pages/ChallansPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import API, { getApiOrigin } from "../api";
-import {
-  Table,
-  Button,
-  Spinner,
-  Alert,
-  Modal,
-  Image,
-  Form,
-  Badge,
-  Dropdown,
-  Row,
-  Col,
-  Card,
-} from "react-bootstrap";
+import { Table, Button, Spinner, Alert, Modal, Image, Form, Dropdown } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import {
-  FileEarmarkPdf,
+  FileText,
   QrCode,
-  PencilSquare,
-  Envelope,
+  Pencil,
+  Mail,
   Send,
-  ShieldLock,
-  Gear,
-} from "react-bootstrap-icons";
-import { Trash } from "lucide-react";
+  ShieldCheck,
+  Trash2,
+  Plus,
+  Search,
+  X,
+  MoreHorizontal,
+  Printer,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  SearchX,
+} from "lucide-react";
 import Loader from "../components/Loader";
+import PageHeader from "../components/PageHeader";
+import StatusBadge from "../components/StatusBadge";
+import { useConfirm } from "../components/ConfirmDialog";
 import "./ChallansPage.css";
 import { trackEvent, Events } from "../analytics";
 import { resolveTrustedAssetUrl } from "../utils/safeUrl";
+import { getStoredUser } from "../utils/session";
+
+const PAGE_SIZE = 25;
+const EMPTY_FILTERS = { search: "", fromDate: "", toDate: "", status: "all" };
+const NOTICE_ICONS = { success: CheckCircle2, danger: AlertCircle, warning: AlertTriangle, info: Info };
+
+// Server dates arrive as "dd/mm/yyyy, hh:mm:ss"
+const parseChallanDate = (dateStr) => {
+  if (!dateStr) return null;
+  try {
+    const [datePart] = dateStr.split(",");
+    const [day, month, year] = datePart.split("/").map((v) => parseInt(v, 10));
+    if (!day || !month || !year) return null;
+    return new Date(year, month - 1, day);
+  } catch {
+    return null;
+  }
+};
+
+const formatChallanDate = (dateStr) => {
+  const d = parseChallanDate(dateStr);
+  if (!d) return { day: dateStr || "—", time: "" };
+  const time = (dateStr.split(",")[1] || "").trim().slice(0, 5);
+  return { day: d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }), time };
+};
+
+const RowActionsToggle = React.forwardRef(({ onClick, className = "", ...props }, ref) => (
+  <button
+    ref={ref}
+    type="button"
+    {...props}
+    className={`${className} no-caret btn btn-ghost btn-icon btn-sm`}
+    onClick={(e) => {
+      e.preventDefault();
+      onClick(e);
+    }}
+  >
+    <MoreHorizontal size={18} />
+  </button>
+));
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState([]);
-  const [filteredChallans, setFilteredChallans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [notice, setNotice] = useState(null);
   const [qrPreview, setQrPreview] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [otpModal, setOtpModal] = useState(false);
   const [otpValue, setOtpValue] = useState("");
+  const [otpError, setOtpError] = useState("");
   const [selectedChallan, setSelectedChallan] = useState(null);
   const [verifying, setVerifying] = useState(false);
-
-  // Bulk selection state
-  const [selectedSet, setSelectedSet] = useState(new Set());
-  const [selectAll, setSelectAll] = useState(false);
-  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
-
-  const [filters, setFilters] = useState({
-    fromDate: "",
-    toDate: "",
-    status: "all",
-  });
-
-  const navigate = useNavigate();
-  const base_url_for_img = getApiOrigin();
-
-  // Determine user role robustly from localStorage
-  const getUserRole = () => {
-    try {
-      const u = JSON.parse(localStorage.getItem("tenant_user") || "null");
-      if (!u) return null;
-      // common possible fields used by your app
-      return u.role || u.user_type || u.type || (u.is_admin ? "tenant_admin" : "tenant_staff");
-    } catch {
-      return null;
-    }
-  };
-
-  const role = getUserRole();
-
-  // Permission helpers (you told me tenant_admin + tenant_staff can bulk delete)
-  const canBulkDelete = () => {
-    // both admin & staff allowed by your choice B
-    return role === "tenant_admin" || role === "tenant_staff";
-  };
-
+  const [selectedSet, setSelectedSet] = useState(() => new Set());
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
   const [usage, setUsage] = useState(null);
 
+  const [confirm, confirmDialog] = useConfirm();
+  const navigate = useNavigate();
+  const base_url_for_img = getApiOrigin();
+  const headerCheckRef = useRef(null);
+
+  const role = (() => {
+    const u = getStoredUser();
+    if (!u) return null;
+    return u.role || u.user_type || u.type || (u.is_admin ? "tenant_admin" : "tenant_staff");
+  })();
+  // Both admins and staff may bulk delete
+  const canBulkDelete = role === "tenant_admin" || role === "tenant_staff";
+
+  const notify = (variant, text) => setNotice({ variant, text });
+
   useEffect(() => {
-    API.get("/dashboard").then((res) => {
-      if (res.data?.usage) setUsage(res.data.usage);
-    }).catch(() => {});
+    API.get("/dashboard")
+      .then((res) => {
+        if (res.data?.usage) setUsage(res.data.usage);
+      })
+      .catch(() => {});
   }, []);
 
-  // 🧠 Fetch all challans
-  // const fetchChallans = async () => {
-  //   try {
-  //     setProcessing(true);
-  //     const res = await API.get("/challans");
-  //     setChallans(res.data);
-  //     setFilteredChallans(res.data);
-  //     // reset selections on fresh load
-  //     setSelectedSet(new Set());
-  //     setSelectAll(false);
-  //   } catch (err) {
-  //     console.error("fetch challans", err);
-  //     setMsg("Failed to fetch challans");
-  //   } finally {
-  //     setLoading(false);
-  //     setProcessing(false);
-  //   }
-  // };
-const fetchChallans = async () => {
-  try {
-    setProcessing(true);
+  const fetchChallans = async () => {
+    try {
+      setProcessing(true);
+      const res = await API.get("/challans");
 
-    const res = await API.get("/challans");
+      // Guard against tunnels (e.g. ngrok) answering with an HTML interstitial
+      if (!res.headers["content-type"] || !res.headers["content-type"].includes("application/json")) {
+        console.error("Non-JSON response received:", res.data);
+        notify("danger", "The server returned an unexpected response. Please refresh and try again.");
+        setChallans([]);
+        return;
+      }
 
-    // 🚨 NGROK SAFETY CHECK
-    if (
-      !res.headers["content-type"] ||
-      !res.headers["content-type"].includes("application/json")
-    ) {
-      console.error("Non-JSON response received:", res.data);
-      setMsg("❌ Server returned invalid response (ngrok warning)");
+      const list = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.challans)
+        ? res.data.challans
+        : [];
+      setChallans(list);
+    } catch (err) {
+      console.error("fetch challans error:", err);
+      notify("danger", "Failed to fetch challans.");
       setChallans([]);
-      setFilteredChallans([]);
-      return;
+    } finally {
+      setLoading(false);
+      setProcessing(false);
     }
-
-    const list = Array.isArray(res.data)
-      ? res.data
-      : Array.isArray(res.data?.challans)
-      ? res.data.challans
-      : [];
-
-    setChallans(list);
-    setFilteredChallans(list);
-  } catch (err) {
-    console.error("fetch challans error:", err);
-    setMsg("❌ Failed to fetch challans");
-    setChallans([]);
-    setFilteredChallans([]);
-  } finally {
-    setLoading(false);
-    setProcessing(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchChallans();
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // -----------------------
-  // Selection handlers
+  // Filtering (live)
   // -----------------------
+  const statusCounts = useMemo(() => {
+    const counts = { all: challans.length, pending: 0, delivered: 0 };
+    challans.forEach((c) => {
+      if ((c.status || "").toLowerCase() === "delivered") counts.delivered += 1;
+      else counts.pending += 1;
+    });
+    return counts;
+  }, [challans]);
+
+  const filteredChallans = useMemo(() => {
+    const term = filters.search.trim().toLowerCase();
+    const fromDate = filters.fromDate ? new Date(`${filters.fromDate}T00:00:00`) : null;
+    const toDate = filters.toDate ? new Date(`${filters.toDate}T23:59:59.999`) : null;
+
+    return challans.filter((c) => {
+      const status = (c.status || "pending").toLowerCase();
+      if (filters.status !== "all" && status !== filters.status) return false;
+
+      if (fromDate || toDate) {
+        const d = parseChallanDate(c.date);
+        if (!d) return false;
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+      }
+
+      if (term) {
+        const haystack = [c.challan_no, c.customer_name, c.serial_number, c.problem, c.email, c.contact_number, c.city]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [challans, filters]);
+
+  const filtersActive =
+    filters.search.trim() !== "" || filters.fromDate !== "" || filters.toDate !== "" || filters.status !== "all";
+
+  const pageCount = Math.max(1, Math.ceil(filteredChallans.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageRows = filteredChallans.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Any filter change starts over on page 1 with nothing selected
+  useEffect(() => {
+    setPage(1);
+    setSelectedSet(new Set());
+  }, [filters]);
+
+  const updateFilter = (key, value) => setFilters((f) => ({ ...f, [key]: value }));
+  const resetFilters = () => setFilters(EMPTY_FILTERS);
+
+  // -----------------------
+  // Selection (current page)
+  // -----------------------
+  const pageSelectedCount = pageRows.filter((c) => selectedSet.has(c.challan_no)).length;
+  const allOnPageSelected = pageRows.length > 0 && pageSelectedCount === pageRows.length;
+
+  useEffect(() => {
+    if (headerCheckRef.current) {
+      headerCheckRef.current.indeterminate = pageSelectedCount > 0 && !allOnPageSelected;
+    }
+  }, [pageSelectedCount, allOnPageSelected]);
+
   const toggleRowSelect = (challan_no) => {
-    const s = new Set(selectedSet);
-    if (s.has(challan_no)) s.delete(challan_no);
-    else s.add(challan_no);
-    setSelectedSet(s);
-    setSelectAll(false);
+    setSelectedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(challan_no)) next.delete(challan_no);
+      else next.add(challan_no);
+      return next;
+    });
   };
 
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      // clear
-      setSelectedSet(new Set());
-      setSelectAll(false);
-    } else {
-      // select all currently filtered challans
-      const all = new Set(filteredChallans.map((c) => c.challan_no));
-      setSelectedSet(all);
-      setSelectAll(true);
-    }
+  const toggleSelectPage = () => {
+    setSelectedSet((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) pageRows.forEach((c) => next.delete(c.challan_no));
+      else pageRows.forEach((c) => next.add(c.challan_no));
+      return next;
+    });
   };
 
   // -----------------------
   // Bulk delete
   // -----------------------
   const handleBulkDelete = async () => {
-    if (!canBulkDelete()) {
-      return setMsg("❌ You don't have permission to perform bulk delete.");
+    if (!canBulkDelete) {
+      notify("danger", "You don't have permission to perform bulk delete.");
+      return;
     }
     const items = Array.from(selectedSet);
     if (!items.length) {
-      return setMsg("⚠️ No challans selected for deletion.");
+      notify("warning", "No challans selected for deletion.");
+      return;
     }
-    // if (!window.confirm(`Delete ${items.length} challan(s)? This action cannot be undone.`)) return;
+    const ok = await confirm({
+      title: `Delete ${items.length} challan${items.length > 1 ? "s" : ""}?`,
+      body: "This permanently removes the selected challans and their PDFs. This action cannot be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
 
     setProcessing(true);
-    setMsg("");
+    setNotice(null);
     try {
-      // perform deletes in parallel but handle failures individually
-      const results = await Promise.allSettled(
-        items.map((no) => API.delete(`/challan/${no}`))
-      );
-
+      const results = await Promise.allSettled(items.map((no) => API.delete(`/challan/${no}`)));
       const failed = results.reduce((acc, r, idx) => {
-        if (r.status === "rejected" || (r.status === "fulfilled" && r.value?.data?.error)) {
-          acc.push(items[idx]);
-        }
+        if (r.status === "rejected" || (r.status === "fulfilled" && r.value?.data?.error)) acc.push(items[idx]);
         return acc;
       }, []);
 
       if (failed.length === 0) {
-        setMsg(`✅ Deleted ${items.length} challan(s) successfully.`);
+        notify("success", `Deleted ${items.length} challan${items.length > 1 ? "s" : ""}.`);
         trackEvent(Events.CHALLAN_BULK_DELETED, { count: items.length });
       } else {
-        setMsg(`⚠️ Deleted ${items.length - failed.length} challan(s). Failed: ${failed.join(", ")}`);
+        notify("warning", `Deleted ${items.length - failed.length} challan(s). Failed: ${failed.join(", ")}`);
       }
-
-      // refresh
+      setSelectedSet(new Set());
       await fetchChallans();
     } catch (err) {
       console.error("bulk delete error", err);
-      setMsg("❌ Bulk delete failed.");
+      notify("danger", "Bulk delete failed.");
     } finally {
       setProcessing(false);
-      setConfirmBulkDelete(false);
     }
   };
 
   // -----------------------
-  // Filters
-  // -----------------------
-  const applyFilters = () => {
-    let filtered = [...challans];
-
-    const parseCustomDate = (dateStr) => {
-      if (!dateStr) return null;
-      try {
-        const [datePart] = dateStr.split(",");
-        const [day, month, year] = datePart.split("/").map((v) => parseInt(v, 10));
-        return new Date(year, month - 1, day);
-      } catch {
-        return null;
-      }
-    };
-
-    const fromDate = filters.fromDate ? new Date(filters.fromDate) : null;
-    const toDate = filters.toDate ? new Date(new Date(filters.toDate).setHours(23, 59, 59, 999)) : null;
-
-    filtered = filtered.filter((c) => {
-      const challanDate = parseCustomDate(c.date);
-      if (!challanDate) return false;
-
-      const dateMatch = (!fromDate || challanDate >= fromDate) && (!toDate || challanDate <= toDate);
-      const statusMatch = filters.status === "all" || (c.status && c.status.toLowerCase() === filters.status);
-
-      return dateMatch && statusMatch;
-    });
-
-    setFilteredChallans(filtered);
-    // reset selections when filters applied
-    setSelectedSet(new Set());
-    setSelectAll(false);
-  };
-
-  const resetFilters = () => {
-    setFilters({ fromDate: "", toDate: "", status: "all" });
-    setFilteredChallans(challans);
-    setSelectedSet(new Set());
-    setSelectAll(false);
-  };
-
-  // -----------------------
-  // Single-item actions (delete/send OTP/etc)
+  // Single-item actions
   // -----------------------
   const handleDelete = async (challan_no) => {
-    if (!window.confirm("Delete this challan?")) return;
+    const ok = await confirm({
+      title: `Delete ${challan_no}?`,
+      body: "The challan and its PDF will be removed permanently.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
     setProcessing(true);
     try {
       await API.delete(`/challan/${challan_no}`);
       trackEvent(Events.CHALLAN_DELETED, { challan_no });
-      setMsg("🗑️ Challan deleted successfully");
+      notify("success", `Challan ${challan_no} deleted.`);
+      setSelectedSet((prev) => {
+        const next = new Set(prev);
+        next.delete(challan_no);
+        return next;
+      });
       fetchChallans();
     } catch (err) {
       console.error(err);
-      setMsg("❌ Failed to delete challan");
+      notify("danger", "Failed to delete challan.");
     } finally {
       setProcessing(false);
     }
   };
 
   const handleDownloadPDF = (pdfUrl, challanNo) => {
-    if (!pdfUrl) return alert("PDF not available yet.");
+    if (!pdfUrl) return notify("warning", "The PDF isn't available yet.");
     trackEvent(Events.CHALLAN_PDF_DOWNLOADED, { challan_no: challanNo });
     const fullUrl = resolveTrustedAssetUrl(pdfUrl, base_url_for_img);
-    if (!fullUrl) return alert("Invalid or untrusted PDF URL.");
+    if (!fullUrl) return notify("danger", "Invalid or untrusted PDF URL.");
     window.open(fullUrl, "_blank", "noopener,noreferrer");
+    return undefined;
   };
 
   const handleRequestDeliveredPDF = async (challan, { email = false } = {}) => {
-    if (email && !window.confirm("Email a delivered copy of this challan PDF?")) return;
+    if (email) {
+      const ok = await confirm({
+        title: "Email the delivered PDF?",
+        body: `A delivered copy of ${challan.challan_no} will be sent to ${challan.email || "the customer"}.`,
+        confirmLabel: "Send email",
+      });
+      if (!ok) return;
+    }
     setProcessing(true);
     try {
       const res = await API.post(`/challan/${challan.challan_no}/delivered_pdf`, { email });
       const pdfUrl = res.data?.pdf_url;
-      setMsg(
-        email
-          ? res.data?.emailed
-            ? "✅ Delivered PDF emailed."
-            : "Delivered PDF is ready, but this challan has no customer email."
-          : "✅ Delivered PDF is ready."
-      );
+      if (email) {
+        if (res.data?.emailed) notify("success", "Delivered PDF emailed.");
+        else notify("warning", "Delivered PDF is ready, but this challan has no customer email.");
+      } else {
+        notify("success", "Delivered PDF is ready.");
+      }
       fetchChallans();
       if (!email && pdfUrl) handleDownloadPDF(pdfUrl, challan.challan_no);
     } catch (err) {
       console.error(err);
-      setMsg(err.response?.data?.error || "❌ Could not create the delivered PDF");
+      notify("danger", err.response?.data?.error || "Could not create the delivered PDF.");
     } finally {
       setProcessing(false);
     }
   };
 
-  const handleViewQR = async (qrUrl, challanNo) => {
-    if (!qrUrl) return alert("QR code not available.");
+  const openPdf = (c) =>
+    c.status === "delivered" ? handleRequestDeliveredPDF(c) : handleDownloadPDF(c.pdf_url, c.challan_no);
+
+  const handleViewQR = (qrUrl, challanNo) => {
+    if (!qrUrl) return notify("warning", "The QR code isn't available for this challan.");
     trackEvent(Events.CHALLAN_QR_VIEWED, { challan_no: challanNo });
     const fullUrl = resolveTrustedAssetUrl(qrUrl, base_url_for_img);
-    if (!fullUrl) return alert("Invalid or untrusted QR URL.");
+    if (!fullUrl) return notify("danger", "Invalid or untrusted QR URL.");
     setQrLoading(true);
-    setQrPreview(fullUrl);
-    try {
-      const res = await API.post(`/challan/${challanNo}/refresh_qr`);
-      const fresh = resolveTrustedAssetUrl(res.data?.qr_code_url, base_url_for_img);
-      if (fresh) {
-        setQrLoading(true);
-        setQrPreview(`${fresh}${fresh.includes("?") ? "&" : "?"}v=${Date.now()}`);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    setQrPreview({ url: fullUrl, challanNo });
+    return undefined;
   };
 
-  const handleSendOTP = async (challan_no) => {
-    if (!window.confirm("Send OTP to customer’s email?")) return;
+  const handleSendOTP = async (challan, { skipConfirm = false } = {}) => {
+    if (!skipConfirm) {
+      const ok = await confirm({
+        title: "Send pickup code?",
+        body: `A one-time code will be emailed to ${challan.email || "the customer"} for ${challan.challan_no}.`,
+        confirmLabel: "Send code",
+      });
+      if (!ok) return;
+    }
     setProcessing(true);
     try {
-      const res = await API.post(`/challan/${challan_no}/send_otp`);
-      trackEvent(Events.CHALLAN_OTP_SENT, { challan_no });
-      setMsg(`✅ ${res.data.message}`);
+      const res = await API.post(`/challan/${challan.challan_no}/send_otp`);
+      trackEvent(Events.CHALLAN_OTP_SENT, { challan_no: challan.challan_no });
+      notify("success", res.data?.message || "OTP sent to the customer.");
     } catch (err) {
       console.error(err);
-      setMsg("❌ Failed to send OTP");
+      notify("danger", err.response?.data?.error || "Failed to send OTP.");
     } finally {
       setProcessing(false);
     }
@@ -346,38 +383,45 @@ const fetchChallans = async () => {
   const handleOpenVerifyOTP = (challan) => {
     setSelectedChallan(challan);
     setOtpValue("");
+    setOtpError("");
     setOtpModal(true);
   };
 
-  const handleVerifyOTP = async () => {
-    if (!otpValue.trim()) return alert("Please enter OTP");
+  const handleVerifyOTP = async (e) => {
+    e?.preventDefault();
+    if (otpValue.length !== 6) {
+      setOtpError("Enter the 6-digit code the customer received.");
+      return;
+    }
     setVerifying(true);
+    setOtpError("");
     try {
       const res = await API.post(`/challan/${selectedChallan.challan_no}/verify_otp`, { otp: otpValue });
       trackEvent(Events.CHALLAN_OTP_VERIFIED, { challan_no: selectedChallan.challan_no });
       trackEvent(Events.CHALLAN_DELIVERED, { challan_no: selectedChallan.challan_no });
-      setMsg(`✅ ${res.data.message}`);
+      notify("success", res.data?.message || `${selectedChallan.challan_no} marked as delivered.`);
       setOtpModal(false);
       fetchChallans();
     } catch (err) {
       console.error(err);
-      setMsg("❌ Invalid or expired OTP");
+      setOtpError(err.response?.data?.error || "Invalid or expired OTP.");
     } finally {
       setVerifying(false);
     }
   };
 
-  const handleResendPDF = (challan) => {
-    handleRequestDeliveredPDF(challan, { email: true });
+  const closeQr = () => {
+    setQrPreview(null);
+    setQrLoading(false);
   };
 
-  // 🖨️ Print QR helper — opens a new window with only the image and triggers print
+  // Opens a window with only the QR image and triggers print
   const printQR = () => {
     if (!qrPreview) return;
     try {
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        alert("Popup blocked. Allow popups for this site to print.");
+        notify("warning", "Popup blocked. Allow popups for this site to print.");
         return;
       }
       const doc = printWindow.document;
@@ -389,369 +433,458 @@ const fetchChallans = async () => {
         "body,html{margin:0;padding:0;display:flex;align-items:center;justify-content:center;height:100%;} img{max-width:90%;max-height:90vh;}";
       doc.head.appendChild(style);
       const img = doc.createElement("img");
-      img.src = qrPreview;
+      img.src = qrPreview.url;
       img.onload = () => setTimeout(() => printWindow.print(), 200);
       doc.body.appendChild(img);
     } catch (err) {
       console.error("Print QR failed:", err);
-      alert("Unable to print QR. See console for details.");
+      notify("danger", "Unable to print the QR code.");
     }
   };
 
-  // 🌀 Loader
+  const renderRowMenu = (c, scope) => {
+    const delivered = c.status === "delivered";
+    return (
+      <Dropdown align="end">
+        <Dropdown.Toggle as={RowActionsToggle} id={`actions-${scope}-${c.challan_no}`} aria-label={`Actions for ${c.challan_no}`} />
+        <Dropdown.Menu popperConfig={{ strategy: "fixed" }} renderOnMount={false} style={{ minWidth: 210 }}>
+          <Dropdown.Item onClick={() => openPdf(c)}>
+            <FileText size={15} /> {delivered ? "Delivered PDF" : "View PDF"}
+          </Dropdown.Item>
+          <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url, c.challan_no)}>
+            <QrCode size={15} /> View QR code
+          </Dropdown.Item>
+          {!delivered && (
+            <>
+              <Dropdown.Item onClick={() => navigate(`/app/challan/${c.challan_no}/edit`)}>
+                <Pencil size={15} /> Edit challan
+              </Dropdown.Item>
+              <Dropdown.Divider />
+              <Dropdown.Item onClick={() => handleSendOTP(c)}>
+                <Send size={15} /> Send pickup code
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => handleOpenVerifyOTP(c)}>
+                <ShieldCheck size={15} /> Verify and deliver
+              </Dropdown.Item>
+            </>
+          )}
+          {delivered && (
+            <Dropdown.Item onClick={() => handleRequestDeliveredPDF(c, { email: true })}>
+              <Mail size={15} /> Email delivered PDF
+            </Dropdown.Item>
+          )}
+          <Dropdown.Divider />
+          <Dropdown.Item className="is-danger" onClick={() => handleDelete(c.challan_no)}>
+            <Trash2 size={15} /> Delete
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    );
+  };
+
   if (loading) {
-    return <Loader text="Loading challans..." fullscreen />;
+    return <Loader text="Loading challans…" fullscreen />;
   }
 
+  const hasLimit = usage && usage.limit != null && usage.limit !== -1;
+  const nearLimit = hasLimit && usage.used >= usage.limit * 0.8;
+  const NoticeIcon = notice ? NOTICE_ICONS[notice.variant] || Info : null;
+  const firstRow = filteredChallans.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+  const lastRow = Math.min(currentPage * PAGE_SIZE, filteredChallans.length);
+
   return (
-    <div className="position-relative">
-      {/* Overlay loader for actions */}
-      {processing && <Loader text="Processing, please wait..." overlay />}
+    <div className="page position-relative">
+      {processing && <Loader text="Working on it…" overlay />}
 
-      <div className="mb-4">
-        <h3 className="fw-bold mb-1">Challan Management</h3>
-        <p className="text-muted small">View, search and manage all customer challans.</p>
-      </div>
+      <PageHeader
+        title="Challans"
+        subtitle="Search, track and hand over every job at the counter."
+        actions={
+          <Button onClick={() => navigate("/app/challan/new")}>
+            <Plus size={16} /> New challan
+          </Button>
+        }
+      />
 
-      {msg && <Alert variant={msg.startsWith("✅") ? "success" : "danger"} className="border-0 shadow-sm">{msg}</Alert>}
-
-      {/* Usage Banner */}
-      {usage && (
-        <Card className="p-3 mb-4 border-0 shadow-sm" style={{ background: 'var(--bs-tertiary-bg)' }}>
-          <Row className="align-items-center g-3">
-            <Col xs="auto">
-              <div className="rounded-3 p-2 d-flex align-items-center justify-content-center" style={{ background: 'var(--bs-primary-bg-subtle)', width: 40, height: 40 }}>
-                <FileEarmarkPdf size={20} className="text-primary" />
-              </div>
-            </Col>
-            <Col>
-              <div className="small text-muted fw-semibold">Monthly PDF Usage</div>
-              <div className="fw-bold">
-                {usage.limit === -1 ? (
-                  <span className="text-success">Unlimited</span>
-                ) : (
-                  <span>{usage.used} / {usage.limit} used</span>
-                )}
-              </div>
-            </Col>
-            {usage.limit !== -1 && usage.limit != null && (
-              <Col xs={12} md={4}>
-                <div className="d-flex align-items-center gap-2">
-                  <div className="progress flex-grow-1" style={{ height: '8px', borderRadius: '4px', background: 'var(--bs-border-color)' }}>
-                    <div className="progress-bar" role="progressbar"
-                      style={{
-                        width: `${Math.min((usage.used / usage.limit) * 100, 100)}%`,
-                        borderRadius: '4px',
-                        background: usage.used >= usage.limit ? 'var(--bs-danger)' : 'var(--bs-primary)',
-                      }}
-                    />
-                  </div>
-                  <small className={`fw-semibold ${usage.used >= usage.limit ? 'text-danger' : 'text-muted'}`}>
-                    {Math.max(usage.limit - usage.used, 0)} left
-                  </small>
-                </div>
-              </Col>
-            )}
-          </Row>
-        </Card>
+      {notice && (
+        <Alert variant={notice.variant} dismissible onClose={() => setNotice(null)}>
+          <NoticeIcon size={16} className="flex-shrink-0 mt-1" /> <span>{notice.text}</span>
+        </Alert>
       )}
 
-      {/* Filter Card */}
-      <Card className="p-4 mb-4 border-0 shadow-sm">
-        <Row className="align-items-end">
-          <Col md={3}>
-            <Form.Group>
-              <Form.Label>From Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={filters.fromDate}
-                onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
+      {nearLimit && (
+        <Alert variant={usage.used >= usage.limit ? "danger" : "warning"}>
+          <AlertTriangle size={16} className="flex-shrink-0 mt-1" />
+          <span>
+            {usage.used >= usage.limit
+              ? `You've used all ${usage.limit} PDFs for this month. New challans can't generate PDFs until the quota resets.`
+              : `${usage.used} of ${usage.limit} PDFs used this month — ${Math.max(usage.limit - usage.used, 0)} left.`}
+          </span>
+        </Alert>
+      )}
 
-          <Col md={3}>
-            <Form.Group>
-              <Form.Label>To Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={filters.toDate}
-                onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
-              />
-            </Form.Group>
-          </Col>
+      <div className="surface">
+        {/* Toolbar */}
+        <div className="challans-toolbar">
+          <div className="input-with-icon has-action challans-search">
+            <Search size={16} className="input-icon" />
+            <Form.Control
+              type="search"
+              placeholder="Search by challan no, customer, serial…"
+              value={filters.search}
+              onChange={(e) => updateFilter("search", e.target.value)}
+              aria-label="Search challans"
+            />
+            {filters.search && (
+              <button type="button" className="input-action" onClick={() => updateFilter("search", "")} aria-label="Clear search">
+                <X size={15} />
+              </button>
+            )}
+          </div>
 
-          <Col md={3}>
-            <Form.Group>
-              <Form.Label>Status</Form.Label>
-              <Form.Select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          <div className="segmented" role="group" aria-label="Filter by status">
+            {["all", "pending", "delivered"].map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={filters.status === key}
+                onClick={() => updateFilter("status", key)}
               >
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="delivered">Delivered</option>
-              </Form.Select>
-            </Form.Group>
-          </Col>
+                <span className="text-capitalize">{key}</span>
+                <span className="segmented-count">{statusCounts[key]}</span>
+              </button>
+            ))}
+          </div>
 
-          <Col md={3} className="text-end d-flex gap-2 justify-content-end">
-            <Button variant="outline-primary" className="px-4" onClick={resetFilters} style={{ borderRadius: '10px' }}>
-              Reset
+          <div className="challans-dates">
+            <Form.Control
+              type="date"
+              size="sm"
+              value={filters.fromDate}
+              max={filters.toDate || undefined}
+              onChange={(e) => updateFilter("fromDate", e.target.value)}
+              aria-label="From date"
+            />
+            <span className="text-faint small">to</span>
+            <Form.Control
+              type="date"
+              size="sm"
+              value={filters.toDate}
+              min={filters.fromDate || undefined}
+              onChange={(e) => updateFilter("toDate", e.target.value)}
+              aria-label="To date"
+            />
+          </div>
+
+          {filtersActive && (
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              <X size={14} /> Clear
             </Button>
-            <Button variant="primary" className="px-4" onClick={applyFilters} style={{ borderRadius: '10px' }}>
-              Filter
-            </Button>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Top bar with Create & Bulk actions */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div className="d-flex gap-2">
-          <Button onClick={() => navigate("/app/challan/new")} className="btn-gradient">
-            + Create Challan
-          </Button>
-
-          {/* Bulk delete UI */}
-          {canBulkDelete() && selectedSet.size > 0 && (
-            <>
-              <Button
-                variant="outline-danger"
-                className="d-flex align-items-center gap-2"
-                style={{ borderRadius: '12px' }}
-                disabled={processing}
-                onClick={() => setConfirmBulkDelete(true)}
-              >
-                <Trash size={18} /> Delete Selected ({selectedSet.size})
-              </Button>
-            </>
           )}
         </div>
 
-        <div className="text-muted">{filteredChallans.length} challan(s)</div>
-      </div>
+        {/* Bulk bar */}
+        {canBulkDelete && selectedSet.size > 0 && (
+          <div className="bulk-bar">
+            <span>
+              <strong>{selectedSet.size}</strong> selected
+            </span>
+            <div className="d-flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedSet(new Set())}>
+                Clear selection
+              </Button>
+              <Button variant="outline-danger" size="sm" onClick={handleBulkDelete} disabled={processing}>
+                <Trash2 size={14} /> Delete selected
+              </Button>
+            </div>
+          </div>
+        )}
 
-      {/* Challans Table */}
-      <div className="challans-table-responsive">
-        <Table striped bordered hover className="mt-3 align-middle">
-          <thead>
-            <tr>
-              <th style={{ width: 40 }}>
-              <Form.Check
-                type="checkbox"
-                checked={selectAll}
-                onChange={toggleSelectAll}
-                aria-label="Select all"
-              />
-            </th>
-            <th>#</th>
-            <th>Challan No</th>
-            <th>Customer</th>
-            <th>Serial No</th>
-            <th>Problem</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th style={{ minWidth: 140 }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredChallans.length === 0 ? (
-            <tr>
-              <td colSpan="9" className="text-center text-muted">
-                No challans found for the selected filters.
-              </td>
-            </tr>
-          ) : (
-            filteredChallans.map((c, i) => {
-              const checked = selectedSet.has(c.challan_no);
-              return (
-                <tr key={c.challan_no || i}>
-                  <td>
-                    <Form.Check
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleRowSelect(c.challan_no)}
-                    />
-                  </td>
-                  <td>{i + 1}</td>
-                  <td
-                    onClick={() =>
-                      c.status === "delivered"
-                        ? handleRequestDeliveredPDF(c)
-                        : handleDownloadPDF(c.pdf_url, c.challan_no)
-                    }
-                    style={{ cursor: "pointer" }}
-                  >
-                    {c.challan_no}
-                  </td>
-                  <td>{c.customer_name}</td>
-                  <td>{c.serial_number}</td>
-                  <td>{c.problem}</td>
-                  <td>
-                    {c.status === "delivered" ? (
-                      <Badge className="badge-gradient-success px-3 py-2 rounded-pill">Delivered</Badge>
-                    ) : (
-                      <Badge className="badge-gradient-warning px-3 py-2 rounded-pill">
-                        Pending
-                      </Badge>
+        {/* Table */}
+        {challans.length === 0 ? (
+          <div className="empty-state">
+            <div className="icon-tile mx-auto">
+              <FileText size={24} />
+            </div>
+            <h3>No challans yet</h3>
+            <p>Create a challan when a device comes in. The PDF, QR code and customer email are generated for you.</p>
+            <Button onClick={() => navigate("/app/challan/new")}>
+              <Plus size={16} /> New challan
+            </Button>
+          </div>
+        ) : filteredChallans.length === 0 ? (
+          <div className="empty-state">
+            <div className="icon-tile mx-auto">
+              <SearchX size={24} />
+            </div>
+            <h3>No matching challans</h3>
+            <p>Try a different search term or widen the date range.</p>
+            <Button variant="secondary" onClick={resetFilters}>
+              Clear filters
+            </Button>
+          </div>
+        ) : (
+          <>
+            <ul className="challan-cards d-md-none">
+              {pageRows.map((c, i) => {
+                const checked = selectedSet.has(c.challan_no);
+                const date = formatChallanDate(c.date);
+                return (
+                  <li key={c.challan_no || i} className={`challan-card ${checked ? "is-selected" : ""}`}>
+                    <div className="challan-card-top">
+                      <Form.Check
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleRowSelect(c.challan_no)}
+                        aria-label={`Select ${c.challan_no}`}
+                      />
+                      <button type="button" className="challan-link" onClick={() => openPdf(c)}>
+                        {c.challan_no}
+                      </button>
+                      <StatusBadge status={c.status} />
+                      <div className="ms-auto">{renderRowMenu(c, "m")}</div>
+                    </div>
+                    <div className="cell-primary">{c.customer_name || "—"}</div>
+                    <div className="cell-sub">
+                      {[c.serial_number, date.day].filter(Boolean).join(" · ")}
+                    </div>
+                    {c.problem && <div className="challan-card-problem">{c.problem}</div>}
+                    {c.status !== "delivered" && (
+                      <Button variant="secondary" size="sm" className="w-100 mt-3" onClick={() => handleOpenVerifyOTP(c)}>
+                        <ShieldCheck size={14} /> Verify handover
+                      </Button>
                     )}
-                  </td>
-                  <td>{c.date}</td>
-                  <td className="text-end">
-                    <Dropdown align="end" autoClose="outside">
-                      <Dropdown.Toggle
-                        variant="outline-secondary"
-                        size="sm"
-                        id={`dropdown-${c.challan_no}`}
-                      >
-                        <Gear size={16} className="me-1" />
-                        Actions
-                      </Dropdown.Toggle>
+                  </li>
+                );
+              })}
+            </ul>
 
-                      <Dropdown.Menu
-                        popperConfig={{
-                          strategy: "fixed",
-                        }}
-                        style={{ minWidth: "180px" }}
-                      >
-                        <Dropdown.Item
-                          onClick={() =>
-                            c.status === "delivered"
-                              ? handleRequestDeliveredPDF(c)
-                              : handleDownloadPDF(c.pdf_url, c.challan_no)
-                          }
-                        >
-                          <FileEarmarkPdf className="me-2 text-danger" />
-                          {c.status === "delivered" ? "Request delivered PDF" : "View PDF"}
-                        </Dropdown.Item>
+            <div className="data-table-wrap d-none d-md-block">
+              <Table hover className="data-table challans-table">
+                <thead>
+                  <tr>
+                    <th className="col-check">
+                      <Form.Check
+                        type="checkbox"
+                        ref={headerCheckRef}
+                        checked={allOnPageSelected}
+                        onChange={toggleSelectPage}
+                        aria-label="Select all on this page"
+                      />
+                    </th>
+                    <th>Challan</th>
+                    <th>Customer</th>
+                    <th>Device</th>
+                    <th>Problem</th>
+                    <th>Status</th>
+                    <th className="text-end">
+                      <span className="visually-hidden">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((c, i) => {
+                    const checked = selectedSet.has(c.challan_no);
+                    const delivered = c.status === "delivered";
+                    const date = formatChallanDate(c.date);
+                    return (
+                      <tr key={c.challan_no || i} className={checked ? "is-selected" : ""}>
+                        <td className="col-check">
+                          <Form.Check
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleRowSelect(c.challan_no)}
+                            aria-label={`Select ${c.challan_no}`}
+                          />
+                        </td>
+                        <td>
+                          <button type="button" className="challan-link" onClick={() => openPdf(c)} title="Open PDF">
+                            {c.challan_no}
+                          </button>
+                          <div className="cell-sub">
+                            {date.day}
+                            {date.time && ` · ${date.time}`}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="cell-primary">{c.customer_name || "—"}</div>
+                          {(c.contact_number || c.city) && (
+                            <div className="cell-sub">{[c.contact_number, c.city].filter(Boolean).join(" · ")}</div>
+                          )}
+                        </td>
+                        <td className="text-nowrap">{c.serial_number || "—"}</td>
+                        <td>
+                          <div className="cell-problem" title={c.problem || ""}>
+                            {c.problem || <span className="text-faint">—</span>}
+                          </div>
+                        </td>
+                        <td>
+                          <StatusBadge status={c.status} />
+                        </td>
+                        <td className="text-end">
+                          <div className="d-inline-flex align-items-center gap-1">
+                            {!delivered && (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="d-none d-xl-inline-flex"
+                                onClick={() => handleOpenVerifyOTP(c)}
+                              >
+                                <ShieldCheck size={14} /> Handover
+                              </Button>
+                            )}
+                            {renderRowMenu(c, "t")}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+            </div>
 
-                        <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url, c.challan_no)}>
-                          <QrCode className="me-2 text-primary" />
-                          View QR
-                        </Dropdown.Item>
-
-                        {c.status !== "delivered" && (
-                          <>
-                            <Dropdown.Item onClick={() => navigate(`/app/challan/${c.challan_no}/edit`)}>
-                              <PencilSquare className="me-2 text-info" />
-                              Edit Challan
-                            </Dropdown.Item>
-
-                            <Dropdown.Item onClick={() => handleSendOTP(c.challan_no)}>
-                              <Send className="me-2 text-warning" />
-                              Send OTP
-                            </Dropdown.Item>
-
-                            <Dropdown.Item onClick={() => handleOpenVerifyOTP(c)}>
-                              <ShieldLock className="me-2 text-success" />
-                              Verify OTP
-                            </Dropdown.Item>
-                          </>
-                        )}
-
-                        {c.status === "delivered" && (
-                          <Dropdown.Item onClick={() => handleResendPDF(c)}>
-                            <Envelope className="me-2 text-primary" />
-                            Resend PDF
-                          </Dropdown.Item>
-                        )}
-
-                        <Dropdown.Divider />
-
-                        <Dropdown.Item className="text-danger" onClick={() => handleDelete(c.challan_no)}>
-                          <Trash className="me-2" />
-                          Delete Challan
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-        </Table>
+            <div className="table-footer">
+              <span className="text-muted small tabular-nums">
+                {firstRow}–{lastRow} of {filteredChallans.length}
+                {filtersActive && challans.length !== filteredChallans.length && ` (filtered from ${challans.length})`}
+              </span>
+              {pageCount > 1 && (
+                <div className="d-flex align-items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="btn-icon"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage(currentPage - 1)}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
+                  <span className="small tabular-nums px-1">
+                    {currentPage} / {pageCount}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="btn-icon"
+                    disabled={currentPage === pageCount}
+                    onClick={() => setPage(currentPage + 1)}
+                    aria-label="Next page"
+                  >
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* QR Modal */}
-      <Modal show={!!qrPreview} onHide={() => { setQrPreview(null); setQrLoading(false); }} centered size="sm">
+      <Modal show={!!qrPreview} onHide={closeQr} centered size="sm">
         <Modal.Header closeButton>
-          <Modal.Title>QR Code</Modal.Title>
+          <Modal.Title>QR code{qrPreview?.challanNo ? ` · ${qrPreview.challanNo}` : ""}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center position-relative" style={{ minHeight: '200px' }}>
+        <Modal.Body className="text-center position-relative" style={{ minHeight: 240 }}>
           {qrLoading && (
             <div className="position-absolute top-50 start-50 translate-middle">
-              <Spinner animation="border" variant="primary" />
-              <div className="mt-2 text-muted small">Loading QR...</div>
+              <span className="app-spinner d-inline-block" aria-hidden="true" />
             </div>
           )}
-          <Image
-            src={qrPreview}
-            alt="Challan QR Code"
-            fluid
-            style={{ maxWidth: 250, display: qrLoading ? 'none' : 'block', margin: '0 auto' }}
-            onLoad={() => setQrLoading(false)}
-          />
+          {qrPreview && (
+            <div className="qr-frame" style={{ visibility: qrLoading ? "hidden" : "visible" }}>
+              <Image
+                src={qrPreview.url}
+                alt={`QR code for ${qrPreview.challanNo}`}
+                fluid
+                onLoad={() => setQrLoading(false)}
+                onError={() => {
+                  setQrLoading(false);
+                  notify("danger", "The QR image could not be loaded.");
+                  setQrPreview(null);
+                }}
+              />
+            </div>
+          )}
+          <p className="small text-muted mt-3 mb-0">Customers scan this to see the job status.</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => { setQrPreview(null); setQrLoading(false); }}>
+          <Button variant="secondary" onClick={closeQr}>
             Close
           </Button>
-          <Button variant="primary" onClick={printQR} disabled={qrLoading || !qrPreview}>
-            🖨️ Print QR
+          <Button onClick={printQR} disabled={qrLoading || !qrPreview}>
+            <Printer size={15} /> Print
           </Button>
         </Modal.Footer>
       </Modal>
 
       {/* OTP Modal */}
       <Modal show={otpModal} onHide={() => setOtpModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>🔐 Verify OTP</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Enter OTP sent to customer email</Form.Label>
-            <Form.Control
-              type="text"
-              value={otpValue}
-              onChange={(e) => setOtpValue(e.target.value)}
-              placeholder="6-digit code"
-              maxLength={6}
-            />
-          </Form.Group>
-          <div className="text-end">
-            <Button variant="primary" onClick={handleVerifyOTP} disabled={verifying}>
+        <Form onSubmit={handleVerifyOTP}>
+          <Modal.Header closeButton>
+            <Modal.Title>Verify handover</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {selectedChallan && (
+              <div className="usage-card d-flex justify-content-between align-items-center gap-3 mb-4">
+                <div className="min-w-0">
+                  <div className="cell-primary" style={{ color: "var(--text-main)", fontWeight: 600 }}>
+                    {selectedChallan.challan_no} · {selectedChallan.customer_name}
+                  </div>
+                  <div className="small text-muted text-truncate">{selectedChallan.email || "No email on file"}</div>
+                </div>
+                <StatusBadge status={selectedChallan.status} />
+              </div>
+            )}
+            <Form.Group controlId="otp-code">
+              <Form.Label>Code from the customer&apos;s email</Form.Label>
+              <Form.Control
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={otpValue}
+                onChange={(e) => {
+                  setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  setOtpError("");
+                }}
+                placeholder="••••••"
+                maxLength={6}
+                className="otp-input"
+                isInvalid={!!otpError}
+                autoFocus
+              />
+              <Form.Control.Feedback type="invalid">{otpError}</Form.Control.Feedback>
+            </Form.Group>
+            <Button
+              variant="link"
+              size="sm"
+              className="px-0 mt-2"
+              onClick={() => selectedChallan && handleSendOTP(selectedChallan, { skipConfirm: true })}
+              disabled={processing}
+            >
+              <Send size={13} /> Send a new code
+            </Button>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setOtpModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={verifying || otpValue.length !== 6}>
               {verifying ? (
                 <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Verifying...
+                  <Spinner animation="border" size="sm" /> Verifying…
                 </>
               ) : (
-                "✅ Verify & Deliver"
+                <>
+                  <ShieldCheck size={15} /> Verify and deliver
+                </>
               )}
             </Button>
-          </div>
-        </Modal.Body>
+          </Modal.Footer>
+        </Form>
       </Modal>
 
-      {/* Confirm Bulk Delete Modal */}
-      <Modal show={confirmBulkDelete} onHide={() => setConfirmBulkDelete(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Bulk Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete <strong>{selectedSet.size}</strong> challan(s)? This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setConfirmBulkDelete(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleBulkDelete} disabled={processing}>
-            {processing ? <Spinner animation="border" size="sm" /> : "Delete"}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {confirmDialog}
     </div>
   );
 }

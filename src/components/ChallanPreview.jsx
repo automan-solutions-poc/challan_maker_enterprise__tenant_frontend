@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { getStoredUser } from "../utils/session";
 
+// Paper-style approximation of the generated PDF. Always light: it represents a printed document.
 export default function ChallanPreview({ template = {}, data = {} }) {
-  
   const theme = template.theme_color || "#114e9e";
   const font = template.font_family || "Arial, sans-serif";
   const accessories =
@@ -9,152 +10,86 @@ export default function ChallanPreview({ template = {}, data = {} }) {
       ? data.accessories.join(", ")
       : "—";
   const items = Array.isArray(data.items) ? data.items : [];
+  const terms = template.terms_conditions ? template.terms_conditions.split("<br/>").filter(Boolean) : [];
+  const user = getStoredUser();
+  const givenBy = user?.name || user?.full_name || "—";
 
-  // 🧠 Logged-in user info (tenant)
-  const [loggedInUser, setLoggedInUser] = useState("");
-  ;
-  if(template.terms_conditions){
-  var terms_conditions_string=template.terms_conditions.split("<br/>");
-  } else {
-    terms_conditions_string=[];
-  }
-  
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("tenant_user") || "{}");
-    if (userData?.name || userData?.full_name) {
-      setLoggedInUser(userData.name || userData.full_name);
-    }
-  }, []);
+  const label = { color: "#6b7280", fontWeight: 600 };
+  const sectionTitle = { color: theme, fontWeight: 600, fontSize: 13, letterSpacing: "0.02em", margin: "0 0 6px" };
 
   return (
-    <div
-      className="challan-preview p-4"
-      style={{
-        border: "1px solid #ddd",
-        maxWidth: 780,
-        fontFamily: font,
-        fontSize: 14,
-        borderRadius: 8,
-        background: "#fff",
-        color: "#333", // Ensure text is dark on white background
-        boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-      }}
-    >
+    <div className="challan-preview" style={{ fontFamily: font, fontSize: 13.5, lineHeight: 1.55 }}>
       {/* Header */}
-      <div style={{ borderTop: `6px solid ${theme}`, paddingTop: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ borderTop: `6px solid ${theme}`, paddingTop: 14, margin: "-1.75rem -1.75rem 0", padding: "14px 1.75rem 0", borderRadius: "12px 12px 0 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             {template.logo_url && (
               <img
                 src={template.logo_url}
-                alt="Company Logo"
+                alt="Company logo"
                 style={{
-                  width: 60,
-                  height: 60,
+                  width: 56,
+                  height: 56,
                   objectFit: "contain",
                   borderRadius: 8,
                   border: "1px solid #eee",
                   backgroundColor: "#fff",
+                  flexShrink: 0,
                 }}
               />
             )}
-            <div>
-              <h4 style={{ margin: 0, color: theme }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ margin: 0, color: theme, fontSize: 18, fontWeight: 700, lineHeight: 1.25 }}>
                 {template.company_name || "Company Name"}
-              </h4>
-              {template.tagline && (
-                <div style={{ color: "#555", fontSize: 13 }}>
-                  {template.tagline}
-                </div>
-              )}
-              {template.company_address && (
+              </div>
+              {template.tagline && <div style={{ color: "#555", fontSize: 12.5 }}>{template.tagline}</div>}
+              {template.company_address && <div style={{ color: "#666", fontSize: 12 }}>{template.company_address}</div>}
+              {(template.company_phone || template.company_email) && (
                 <div style={{ color: "#666", fontSize: 12 }}>
-                  {template.company_address}
-                </div>
-              )}
-              {template.company_phone && (
-                <div style={{ color: "#666", fontSize: 12 }}>
-                  📞 {template.company_phone}
-                </div>
-              )}
-              {template.company_email && (
-                <div style={{ color: "#666", fontSize: 12 }}>
-                  ✉️ {template.company_email}
+                  {[template.company_phone, template.company_email].filter(Boolean).join(" · ")}
                 </div>
               )}
             </div>
           </div>
 
-          <div style={{ textAlign: "right", color: "#333" }}>
+          <div style={{ textAlign: "right", color: "#333", fontSize: 12.5, flexShrink: 0 }}>
             <div>
-              <strong>Challan No:</strong> {data.challan_no || "CH-XXXXX"}
+              <span style={label}>Challan No:</span> {data.challan_no || "CH-XXXXX"}
             </div>
             <div>
-              <strong>Date:</strong>{" "}
-              {data.created_at
-                ? new Date(data.created_at).toLocaleString()
-                : new Date().toLocaleDateString()}
+              <span style={label}>Date:</span>{" "}
+              {data.created_at ? new Date(data.created_at).toLocaleString() : new Date().toLocaleDateString()}
             </div>
           </div>
         </div>
       </div>
 
-      <hr style={{ margin: "12px 0", borderColor: "#eee" }} />
+      <hr style={{ margin: "14px 0", border: 0, borderTop: "1px solid #eee", opacity: 1 }} />
 
       {/* Customer Info */}
-      <div style={{ color: "#333" }}>
-        <div>
-          <strong style={{ color: "#555" }}>Customer:</strong> {data.customer_name || "John Doe"}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>Email:</strong> {data.email || "example@email.com"}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>Contact:</strong> {data.contact_number || "9999999999"}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>City:</strong> {data.city || "Nashik"}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>Serial Number:</strong> {data.serial_number || "SN-12345"}
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "2px 16px", color: "#333" }}>
+        <div><span style={label}>Customer:</span> {data.customer_name || "John Doe"}</div>
+        <div><span style={label}>Email:</span> {data.email || "example@email.com"}</div>
+        <div><span style={label}>Contact:</span> {data.contact_number || "9999999999"}</div>
+        <div><span style={label}>City:</span> {data.city || "Nashik"}</div>
+        <div><span style={label}>Serial Number:</span> {data.serial_number || "SN-12345"}</div>
       </div>
 
       {/* Item Details */}
       {items.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <h6 style={{ color: theme, fontWeight: "600" }}>Item Details</h6>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: 4,
-            }}
-          >
+          <div style={sectionTitle}>Item Details</div>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr
-                style={{
-                  background: "#f8f9fa",
-                  textAlign: "left",
-                  borderBottom: "2px solid #eee",
-                  color: "#555"
-                }}
-              >
-                <th style={{ padding: 6 }}>#</th>
+              <tr style={{ background: "#f8f9fa", textAlign: "left", borderBottom: "2px solid #eee", color: "#555" }}>
+                <th style={{ padding: 6, width: 36 }}>#</th>
                 <th style={{ padding: 6 }}>Description</th>
-                <th style={{ padding: 6, width: "80px" }}>Qty</th>
+                <th style={{ padding: 6, width: 64 }}>Qty</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr
-                  key={idx}
-                  style={{
-                    borderBottom: "1px solid #eee",
-                    fontSize: 13,
-                    color: "#333"
-                  }}
-                >
+                <tr key={idx} style={{ borderBottom: "1px solid #eee", color: "#333" }}>
                   <td style={{ padding: 6 }}>{idx + 1}</td>
                   <td style={{ padding: 6 }}>{item.description || "—"}</td>
                   <td style={{ padding: 6 }}>{item.quantity || 1}</td>
@@ -167,75 +102,33 @@ export default function ChallanPreview({ template = {}, data = {} }) {
 
       {/* Accessories & Warranty */}
       <div style={{ marginTop: 16, color: "#333" }}>
-        <h6 style={{ color: theme, fontWeight: "600" }}>Additional Info</h6>
-        <div>
-          <strong style={{ color: "#555" }}>Accessories:</strong> {accessories}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>Warranty:</strong> {data.warranty || "—"}
-        </div>
-        <div>
-          <strong style={{ color: "#555" }}>Dispatch Through:</strong> {data.dispatch_through || "—"}
-        </div>
-      </div>
-
-      {/* Employee (Challan Given By) */}
-      <div style={{ marginTop: 16 }}>
-        <strong style={{ color: "#555" }}>Challan Given By:</strong>
-        <input
-          type="text"
-          value={loggedInUser || "Unknown"}
-          disabled
-          style={{
-            marginLeft: 10,
-            border: "1px solid #ddd",
-            borderRadius: 4,
-            padding: "4px 8px",
-            fontSize: 13,
-            color: "#333",
-            backgroundColor: "#f9f9f9",
-            width: "auto",
-          }}
-        />
+        <div style={sectionTitle}>Additional Info</div>
+        {template.show_accessories !== false && (
+          <div><span style={label}>Accessories:</span> {accessories}</div>
+        )}
+        <div><span style={label}>Warranty:</span> {data.warranty || "—"}</div>
+        <div><span style={label}>Dispatch Through:</span> {data.dispatch_through || "—"}</div>
+        <div><span style={label}>Challan Given By:</span> {givenBy}</div>
       </div>
 
       {/* Problem */}
       <div style={{ marginTop: 16 }}>
-        <strong style={{ color: "#555" }}>Problem:</strong>
-        <div
-          style={{
-            border: "1px solid #eee",
-            borderRadius: 4,
-            padding: "6px 8px",
-            background: "#fafafa",
-            marginTop: 4,
-            color: "#333"
-          }}
-        >
+        <span style={label}>Problem:</span>
+        <div style={{ border: "1px solid #eee", borderRadius: 6, padding: "6px 10px", background: "#fafafa", marginTop: 4, color: "#333", whiteSpace: "pre-wrap" }}>
           {data.problem || "Describe problem here..."}
         </div>
       </div>
-      <div
-        style={{
-          marginTop: 20,
-          textAlign: "left",
-          color: "#777",
-          fontSize: 13,
-        }}
-      >
-        {terms_conditions_string.map((term, index) => (
-          <p key={index} style={{ marginBottom: '4px' }}>{term}</p>
-        ))}
-      </div>
+
+      {terms.length > 0 && (
+        <div style={{ marginTop: 18, color: "#777", fontSize: 12 }}>
+          {terms.map((term, index) => (
+            <p key={index} style={{ margin: "0 0 4px" }}>{term}</p>
+          ))}
+        </div>
+      )}
+
       {/* Footer */}
-      <div
-        style={{
-          marginTop: 20,
-          textAlign: "center",
-          color: "#777",
-          fontSize: 13,
-        }}
-      >
+      <div style={{ marginTop: 18, paddingTop: 12, borderTop: "1px dashed #e5e3de", textAlign: "center", color: "#777", fontSize: 12.5 }}>
         {template.footer_note || "Thank you for choosing us!"}
       </div>
     </div>
