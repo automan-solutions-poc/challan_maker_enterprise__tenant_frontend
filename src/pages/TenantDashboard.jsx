@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Button, Alert } from "react-bootstrap";
+import { Row, Col, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { FileText, Clock, CheckCircle, Plus } from "lucide-react";
+import { FileText, Clock, CheckCircle2, Plus, Gauge, ArrowRight, AlertCircle } from "lucide-react";
 import {
   ResponsiveContainer,
   PieChart,
@@ -13,23 +13,42 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
 import API from "../api";
 import Loader from "../components/Loader";
+import PageHeader from "../components/PageHeader";
+import { useTheme } from "../ThemeContext";
+import { getStoredUser } from "../utils/session";
 
-const PIE_COLORS = ["#f59e0b", "#10b981", "#6366f1", "#ef4444", "#a855f7"];
-const BAR_COLOR = "#6366f1";
+// SVG attributes can't resolve CSS variables, so chart colours are picked per theme here.
+const CHART_THEME = {
+  light: { bar: "#4f46e5", grid: "rgba(18,20,28,0.07)", axis: "#8a909c", cursor: "rgba(79,70,229,0.06)", pending: "#f59e0b", delivered: "#10b981", other: ["#4f46e5", "#a855f7", "#e11d48"] },
+  dark: { bar: "#818cf8", grid: "rgba(238,240,244,0.07)", axis: "#7a8190", cursor: "rgba(129,140,248,0.08)", pending: "#fbbf24", delivered: "#34d399", other: ["#818cf8", "#c084fc", "#fb7185"] },
+};
 
-const chartTooltipStyle = {
-  backgroundColor: "rgba(15, 23, 42, 0.95)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 8,
-  color: "#f8fafc",
+const tooltipStyle = {
+  backgroundColor: "var(--bg-card)",
+  border: "1px solid var(--border-color)",
+  borderRadius: 10,
+  boxShadow: "var(--shadow-pop)",
+  color: "var(--text-main)",
+  fontSize: 13,
+};
+
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 };
 
 export default function TenantDashboard() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const colors = CHART_THEME[theme] || CHART_THEME.light;
+  const user = getStoredUser();
+  const firstName = (user?.name || "").trim().split(/\s+/)[0];
+
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -64,196 +83,209 @@ export default function TenantDashboard() {
     fetchDashboard();
   }, []);
 
-  if (loading) return <Loader text="Loading Dashboard..." />;
+  if (loading) return <Loader text="Loading dashboard…" fullscreen />;
 
-  const statusData = stats.charts?.status_breakdown?.length
+  const statusData = (stats.charts?.status_breakdown?.length
     ? stats.charts.status_breakdown
     : [
         { name: "Pending", value: stats.pending },
         { name: "Delivered", value: stats.delivered },
-      ].filter((d) => d.value > 0);
+      ]
+  ).filter((d) => d.value > 0);
 
+  const colorFor = (name, index) => {
+    const key = String(name).toLowerCase();
+    if (key.includes("pend")) return colors.pending;
+    if (key.includes("deliver")) return colors.delivered;
+    return colors.other[index % colors.other.length];
+  };
+
+  const statusTotal = statusData.reduce((sum, d) => sum + (d.value || 0), 0);
   const monthData = stats.charts?.challans_by_month || [];
 
   const usage = stats.usage || {};
-  const pdfChartData =
-    usage.limit != null && usage.limit >= 0
-      ? [
-          { name: "Used", value: usage.used ?? 0 },
-          { name: "Remaining", value: Math.max(0, (usage.limit ?? 0) - (usage.used ?? 0)) },
-        ]
-      : [];
+  const hasLimit = usage.limit != null && usage.limit !== -1;
+  const used = usage.used ?? 0;
+  const usedPct = hasLimit ? Math.min((used / Math.max(usage.limit, 1)) * 100, 100) : 0;
+  const remaining = hasLimit ? Math.max(usage.limit - used, 0) : null;
 
   const statCards = [
-    {
-      title: "Total Challans",
-      value: stats.total ?? 0,
-      icon: <FileText size={24} />,
-      gradient: "var(--primary-gradient)",
-    },
-    {
-      title: "Pending",
-      value: stats.pending ?? 0,
-      icon: <Clock size={24} />,
-      gradient: "var(--warning-gradient)",
-    },
-    {
-      title: "Delivered",
-      value: stats.delivered ?? 0,
-      icon: <CheckCircle size={24} />,
-      gradient: "var(--success-gradient)",
-    },
+    { label: "Total challans", value: stats.total ?? 0, icon: FileText, tone: "", foot: "All time" },
+    { label: "Pending", value: stats.pending ?? 0, icon: Clock, tone: "tone-warning", foot: "Awaiting pickup" },
+    { label: "Delivered", value: stats.delivered ?? 0, icon: CheckCircle2, tone: "tone-success", foot: "OTP verified" },
   ];
 
+  const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="dashboard-container">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h3 className="fw-bold mb-1">Dashboard</h3>
-          <p className="text-muted small">Welcome back! Here&apos;s what&apos;s happening today.</p>
-        </div>
-        <Button
-          onClick={() => navigate("/app/challan/new")}
-          className="btn-gradient d-flex align-items-center gap-2"
-        >
-          <Plus size={20} /> Create New
-        </Button>
-      </div>
+    <div className="page">
+      <PageHeader
+        eyebrow={today}
+        title={firstName ? `${greeting()}, ${firstName}` : greeting()}
+        subtitle="Here's how the counter is doing."
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => navigate("/app/challans")}>
+              View challans
+            </Button>
+            <Button onClick={() => navigate("/app/challan/new")}>
+              <Plus size={16} /> New challan
+            </Button>
+          </>
+        }
+      />
 
       {error && (
-        <Alert variant="danger" className="border-0 shadow-sm mb-4">
-          {error}
+        <Alert variant="danger" className="mb-4">
+          <AlertCircle size={16} className="flex-shrink-0 mt-1" /> <span>{error}</span>
         </Alert>
       )}
 
-      <Row className="g-4 mb-4">
-        {statCards.map((card, idx) => (
-          <Col md={4} key={idx}>
-            <Card className="h-100 p-4 border-0 position-relative overflow-hidden">
-              <div
-                className="position-absolute"
-                style={{
-                  top: "-20px",
-                  right: "-20px",
-                  width: "100px",
-                  height: "100px",
-                  background: card.gradient,
-                  opacity: "0.1",
-                  borderRadius: "50%",
-                }}
-              />
-              <div className="d-flex align-items-center mb-3">
-                <div
-                  className="rounded-4 p-3 me-3 d-flex align-items-center justify-content-center"
-                  style={{
-                    background: card.gradient,
-                    color: "white",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  {card.icon}
-                </div>
-                <h6
-                  className="text-muted fw-bold mb-0"
-                  style={{ fontSize: "0.8rem", letterSpacing: "0.02rem" }}
-                >
-                  {card.title.toUpperCase()}
-                </h6>
+      <Row className="g-3 mb-3">
+        {statCards.map(({ label, value, icon: Icon, tone, foot }) => (
+          <Col sm={6} xl={3} key={label}>
+            <div className="surface stat-card">
+              <div className="d-flex align-items-center justify-content-between">
+                <span className="stat-label">{label}</span>
+                <span className={`icon-tile ${tone}`} style={{ width: 34, height: 34, borderRadius: 10 }}>
+                  <Icon size={17} />
+                </span>
               </div>
-              <div className="display-5 fw-bold">{card.value}</div>
-            </Card>
+              <div className="stat-value">{value}</div>
+              <div className="stat-foot">{foot}</div>
+            </div>
           </Col>
         ))}
+
+        <Col sm={6} xl={3}>
+          <div className="surface stat-card d-flex flex-column">
+            <div className="d-flex align-items-center justify-content-between">
+              <span className="stat-label">PDF quota{usage.month ? ` · ${usage.month}` : ""}</span>
+              <span className="icon-tile" style={{ width: 34, height: 34, borderRadius: 10 }}>
+                <Gauge size={17} />
+              </span>
+            </div>
+            {hasLimit ? (
+              <>
+                <div className="stat-value">
+                  {used}
+                  <span className="text-faint" style={{ fontSize: "1.1rem", fontWeight: 500 }}> / {usage.limit}</span>
+                </div>
+                <div className={`meter mt-3 ${used >= usage.limit ? "is-full" : ""}`}>
+                  <span style={{ width: `${usedPct}%` }} />
+                </div>
+                <div className="stat-foot">
+                  {remaining === 0 ? "Limit reached for this month" : `${remaining} left this month`}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="stat-value">∞</div>
+                <div className="stat-foot">Unlimited PDFs on your plan</div>
+              </>
+            )}
+          </div>
+        </Col>
       </Row>
 
-      <Row className="g-4">
-        <Col lg={8}>
-          <Card className="border-0 shadow-sm p-4 h-100">
-            <h5 className="fw-bold mb-1">Challans over time</h5>
-            <p className="text-muted small mb-4">New challans created — last 6 months</p>
-            {monthData.length === 0 ? (
-              <p className="text-muted text-center py-5">No challan data yet.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                  <XAxis dataKey="label" tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                  <YAxis allowDecimals={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                  <Tooltip contentStyle={chartTooltipStyle} />
-                  <Bar dataKey="count" name="Challans" fill={BAR_COLOR} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
-        </Col>
+      {stats.total === 0 && !error ? (
+        <div className="surface empty-state">
+          <div className="icon-tile mx-auto">
+            <FileText size={24} />
+          </div>
+          <h3>Create your first challan</h3>
+          <p>Log a customer's device, and infiChallan generates a branded PDF with a QR code for tracking.</p>
+          <Button onClick={() => navigate("/app/challan/new")}>
+            <Plus size={16} /> New challan
+          </Button>
+        </div>
+      ) : (
+        <Row className="g-3">
+          <Col lg={8}>
+            <div className="surface surface-pad h-100">
+              <div className="d-flex align-items-start justify-content-between gap-3 section-head">
+                <div>
+                  <h2 className="section-title">Challans over time</h2>
+                  <p className="section-desc">New challans created in the last 6 months</p>
+                </div>
+              </div>
+              {monthData.length === 0 ? (
+                <p className="text-muted text-center py-5 mb-0">No challan data yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={monthData} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={colors.grid} />
+                    <XAxis dataKey="label" tick={{ fill: colors.axis, fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fill: colors.axis, fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: colors.cursor }} labelStyle={{ color: "var(--text-muted)" }} itemStyle={{ color: "var(--text-main)" }} />
+                    <Bar dataKey="count" name="Challans" fill={colors.bar} radius={[6, 6, 0, 0]} maxBarSize={44} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Col>
 
-        <Col lg={4}>
-          <Card className="border-0 shadow-sm p-4 h-100 mb-4 mb-lg-0">
-            <h5 className="fw-bold mb-1">Status mix</h5>
-            <p className="text-muted small mb-3">Pending vs delivered</p>
-            {statusData.length === 0 ? (
-              <p className="text-muted text-center py-4">No challans yet.</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                  >
+          <Col lg={4}>
+            <div className="surface surface-pad h-100">
+              <div className="section-head">
+                <h2 className="section-title">Status mix</h2>
+                <p className="section-desc">Pending vs delivered</p>
+              </div>
+              {statusData.length === 0 ? (
+                <p className="text-muted text-center py-4 mb-0">No challans yet.</p>
+              ) : (
+                <>
+                  <div className="position-relative">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={statusData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={62}
+                          outerRadius={86}
+                          paddingAngle={2}
+                          stroke="none"
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={entry.name} fill={colorFor(entry.name, index)} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: "var(--text-main)" }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ pointerEvents: "none" }}>
+                      <div className="tabular-nums" style={{ fontSize: "1.6rem", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1, color: "var(--text-main)" }}>{statusTotal}</div>
+                      <div className="small text-faint">total</div>
+                    </div>
+                  </div>
+                  <ul className="list-unstyled mb-0 mt-3">
                     {statusData.map((entry, index) => (
-                      <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      <li key={entry.name} className="d-flex align-items-center justify-content-between py-2" style={{ borderTop: index ? "1px solid var(--border-color)" : 0 }}>
+                        <span className="d-inline-flex align-items-center gap-2 small">
+                          <span style={{ width: 8, height: 8, borderRadius: 999, background: colorFor(entry.name, index) }} />
+                          {entry.name}
+                        </span>
+                        <span className="small fw-semibold tabular-nums" style={{ color: "var(--text-main)" }}>
+                          {entry.value}
+                          <span className="text-faint fw-normal ms-2">
+                            {statusTotal ? Math.round((entry.value / statusTotal) * 100) : 0}%
+                          </span>
+                        </span>
+                      </li>
                     ))}
-                  </Pie>
-                  <Tooltip contentStyle={chartTooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </Card>
-        </Col>
-      </Row>
-
-      {pdfChartData.length > 0 && (
-        <Row className="g-4 mt-1">
-          <Col md={6} lg={4}>
-            <Card className="border-0 shadow-sm p-4">
-              <h5 className="fw-bold mb-1">PDF quota</h5>
-              <p className="text-muted small mb-3">
-                {usage.month} — {usage.used} / {usage.limit === -1 ? "∞" : usage.limit} used
-              </p>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={pdfChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={70}
-                  >
-                    <Cell fill="#6366f1" />
-                    <Cell fill="#e2e8f0" />
-                  </Pie>
-                  <Tooltip contentStyle={chartTooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Card>
+                  </ul>
+                </>
+              )}
+              <Button variant="link" size="sm" className="px-0 mt-2" onClick={() => navigate("/app/challans")}>
+                Open challan list <ArrowRight size={14} />
+              </Button>
+            </div>
           </Col>
         </Row>
       )}
-
-      <div className="mt-4 text-end">
-        <Button variant="outline-primary" onClick={() => navigate("/app/challans")}>
-          View all challans
-        </Button>
-      </div>
     </div>
   );
 }

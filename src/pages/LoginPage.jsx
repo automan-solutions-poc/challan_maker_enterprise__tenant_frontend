@@ -1,29 +1,17 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import API from "../api";
-import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Alert,
-  Spinner,
-  Modal,
-} from "react-bootstrap";
-import { Zap, Mail, LogIn, Lock, Eye, EyeOff, Sun, Moon, Clock } from "lucide-react";
-import { useTheme } from "../ThemeContext";
-import "./LoginPage.css";
+import { Form, Button, Alert, Spinner, Modal } from "react-bootstrap";
+import { Mail, ArrowRight, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import AuthShell from "../components/AuthShell";
+import PasswordField from "../components/PasswordField";
 import { identifyUser, trackEvent, Events } from "../analytics";
 import { routeAfterTenantAuth } from "../utils/tenantStatus";
 
 export default function LoginPage() {
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email || "");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPendingModal, setShowPendingModal] = useState(false);
@@ -84,104 +72,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <Button
-        variant="link"
-        className="login-theme-toggle"
-        onClick={toggleTheme}
-      >
-        {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
-      </Button>
-      <Container fluid className="h-100 d-flex justify-content-center align-items-center">
-        <Row className="justify-content-center w-100">
-          <Col md={4} sm={8}>
-            <Card className="login-card shadow-lg border-0">
-              <Card.Body className="p-4 p-md-5">
-                <div className="text-center mb-2">
-                  <Link to="/" className="text-decoration-none small text-muted">
-                    ← Back to Home
-                  </Link>
-                </div>
-                <div className="text-center mb-5">
-                  <div className="login-logo mx-auto mb-3 d-flex align-items-center justify-content-center">
-                    <Zap size={32} fill="currentColor" />
-                  </div>
-                  <h2 className="fw-bold brand-text mb-1">InfiChallan</h2>
-                  <p className="text-muted small text-uppercase tracking-wider">
-                    Enterprise Edition
-                  </p>
-                </div>
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to your counter workspace."
+      footer={
+        <>
+          New to infiChallan? <Link to="/signup">Create a free account</Link>
+        </>
+      }
+    >
+      {successMessage && (
+        <Alert variant="success">
+          <CheckCircle2 size={16} className="flex-shrink-0 mt-1" /> <span>{successMessage}</span>
+        </Alert>
+      )}
+      {error && (
+        <Alert variant="danger">
+          <AlertCircle size={16} className="flex-shrink-0 mt-1" /> <span>{error}</span>
+        </Alert>
+      )}
 
-                {successMessage && <Alert variant="success">{successMessage}</Alert>}
-                {error && <Alert variant="danger">{error}</Alert>}
+      <Form onSubmit={handleSubmit} noValidate={false}>
+        <Form.Group className="mb-3" controlId="login-email">
+          <Form.Label>Email</Form.Label>
+          <div className="input-with-icon">
+            <Mail size={16} className="input-icon" />
+            <Form.Control
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoFocus={!email}
+              required
+            />
+          </div>
+        </Form.Group>
 
-                <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-3 position-relative">
-                    <Form.Label className="fw-semibold small">Email</Form.Label>
-                    <div className="input-icon">
-                      <Mail size={18} className="input-icon-left" />
-                      <Form.Control
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </Form.Group>
+        <Form.Group className="mb-4">
+          <Form.Label htmlFor="login-password">Password</Form.Label>
+          <PasswordField
+            id="login-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Your password"
+            autoComplete="current-password"
+          />
+        </Form.Group>
 
-                  <Form.Group className="mb-3 position-relative">
-                    <Form.Label className="fw-semibold small">Password</Form.Label>
-                    <div className="input-icon">
-                      <Lock size={18} className="input-icon-left" />
-                      <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </Form.Group>
-
-                  <Button
-                    type="submit"
-                    className="w-100 login-btn py-2 fw-bold mt-3"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Spinner animation="border" size="sm" />
-                    ) : (
-                      <>
-                        <LogIn size={16} className="me-2" />
-                        Login
-                      </>
-                    )}
-                  </Button>
-                </Form>
-
-                <div className="text-center mt-4 text-muted small">
-                  Don't have an account?{" "}
-                  <Link to="/signup" className="fw-bold text-decoration-none">
-                    Get Started Free
-                  </Link>
-                </div>
-                <div className="text-center mt-2 text-muted small">
-                  © {new Date().getFullYear()} InfiChallan. All rights reserved.
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+        <Button type="submit" className="w-100 btn-lg" disabled={loading}>
+          {loading ? (
+            <>
+              <Spinner animation="border" size="sm" /> Signing in…
+            </>
+          ) : (
+            <>
+              Sign in <ArrowRight size={16} />
+            </>
+          )}
+        </Button>
+      </Form>
 
       <Modal
         show={showPendingModal}
@@ -191,24 +141,21 @@ export default function LoginPage() {
         keyboard={false}
       >
         <Modal.Body className="text-center p-4 p-md-5">
-          <div
-            className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle"
-            style={{ width: 64, height: 64, background: "rgba(245, 158, 11, 0.15)" }}
-          >
-            <Clock size={32} style={{ color: "#f59e0b" }} />
+          <div className="icon-tile tone-warning mx-auto mb-3" style={{ width: 56, height: 56, borderRadius: 16 }}>
+            <Clock size={26} />
           </div>
-          <h4 className="fw-bold mb-2">Approval pending</h4>
+          <h2 className="font-display mb-2" style={{ fontSize: "1.9rem" }}>Approval pending</h2>
           <p className="text-muted mb-0">
             Your registration for <strong>{pendingTenantName || "your organization"}</strong> is
             still waiting for admin approval. You will get an email once your account is activated.
           </p>
         </Modal.Body>
-        <Modal.Footer className="border-0 justify-content-center pb-4">
-          <Button className="login-btn px-4" onClick={goToPendingApproval}>
-            OK, view status
+        <Modal.Footer className="border-0 justify-content-center pb-4 pt-0">
+          <Button className="px-4" onClick={goToPendingApproval}>
+            View status
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </AuthShell>
   );
 }
