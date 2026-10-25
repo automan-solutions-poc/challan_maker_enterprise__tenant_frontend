@@ -1,6 +1,7 @@
 // src/App.js
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import LoginPage from "./pages/LoginPage";
 import TenantDashboard from "./pages/TenantDashboard";
 import ChallansPage from "./pages/ChallansPage";
@@ -26,8 +27,8 @@ import { isTenantPendingApproval } from "./utils/tenantStatus";
 export default function App() {
   return (
     <>
-    <RouteMeta />
-    <Routes>
+      <RouteMeta />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/coming-soon" element={<ComingSoon />} />
       <Route path="/login" element={<LoginPage />} />
@@ -110,7 +111,8 @@ export default function App() {
 
       {/* Catch-all */}
       <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+      </Routes>
+      <Analytics />
     </>
   );
 }
