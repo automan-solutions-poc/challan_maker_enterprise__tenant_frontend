@@ -30,6 +30,7 @@ import {
   BadgeCheck,
   Sparkles,
   MapPin,
+  Play,
 } from 'lucide-react';
 import {
   motion,
@@ -235,6 +236,58 @@ function SectionHeader({ eyebrow, title, lede, center = false }) {
       <h2 className="display-lg mb-[1rem]">{title}</h2>
       {lede && <p className="text-lg text-[#5b6474] leading-relaxed">{lede}</p>}
     </Reveal>
+  );
+}
+
+function FilmSection() {
+  const videoRef = useRef(null);
+  const [started, setStarted] = useState(false);
+
+  const start = () => {
+    setStarted(true);
+    videoRef.current?.play().catch(() => {});
+  };
+
+  return (
+    <section id="film" className="scroll-mt-20 pt-24 px-6">
+      <div className="max-w-6xl mx-auto">
+        <SectionHeader
+          center
+          eyebrow="Watch the film"
+          title={<>infiChallan in <em>50 seconds</em></>}
+          lede="From a paper slip on the counter to an OTP-verified handover."
+        />
+        <Reveal>
+          <div className="paper relative rounded-3xl overflow-hidden aspect-video bg-[#12141c]">
+            <video
+              ref={videoRef}
+              className="absolute inset-0 w-full h-full object-cover"
+              src={`${process.env.PUBLIC_URL}/videos/infichallan-promo.mp4`}
+              poster={`${process.env.PUBLIC_URL}/videos/infichallan-promo-poster.jpg`}
+              preload="none"
+              playsInline
+              controls={started}
+              onEnded={() => setStarted(false)}
+            />
+            {!started && (
+              <button
+                type="button"
+                onClick={start}
+                aria-label="Play the infiChallan film"
+                className="absolute inset-0 flex items-center justify-center group bg-[#12141c]/10 hover:bg-[#12141c]/20 transition-colors"
+              >
+                <span className="btn-accent w-20 h-20 md:w-24 md:h-24 rounded-full shadow-[0_0_0_10px_rgba(79,70,229,0.18)] transition-transform duration-300 group-hover:scale-105">
+                  <Play size={30} className="ml-1" fill="currentColor" />
+                </span>
+                <span className="absolute bottom-[1.25rem] left-[1.25rem] rounded-full bg-white/90 backdrop-blur px-[0.75rem] py-1 text-xs font-medium text-[#12141c]">
+                  0:50 · sound on
+                </span>
+              </button>
+            )}
+          </div>
+        </Reveal>
+      </div>
+    </section>
   );
 }
 
@@ -1155,8 +1208,9 @@ export default function LandingPage() {
                 Create a free account
                 <ArrowRight size={16} className="arrow" />
               </Link>
-              <a href="#product" className="btn-ghost px-6 py-3.5 rounded-full text-[15px]">
-                Tour the product
+              <a href="#film" className="btn-ghost px-6 py-3.5 rounded-full text-[15px]">
+                <Play size={15} fill="currentColor" />
+                Watch the film
               </a>
             </div>
             <div className="hero-in mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#5b6474]" style={{ animationDelay: '450ms' }}>
@@ -1186,6 +1240,8 @@ export default function LandingPage() {
           ))}
         </Reveal>
       </section>
+
+      <FilmSection />
 
       <section id="product" className="scroll-mt-20 py-24 px-6">
         <div className="max-w-6xl mx-auto">
@@ -1560,7 +1616,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto pt-8 mt-12 border-t border-[#ecebe7] flex flex-col sm:flex-row justify-between gap-2 text-xs text-[#8a909c]">
-          <span>© {new Date().getFullYear()} Challan Maker Enterprise.</span>
+          <span>© {new Date().getFullYear()} Automan Solutions.</span>
           <span>Built in {LOCATION}, India, for repair and service counters.</span>
         </div>
       </footer>
