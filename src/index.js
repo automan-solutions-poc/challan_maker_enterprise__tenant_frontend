@@ -7,7 +7,10 @@ import "./styles.css";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./ThemeContext";
-import { AnalyticsProvider } from "./analytics";
+import { AnalyticsProvider, initMixpanel } from "./analytics";
+
+// Init before render so events fired from child mount effects aren't dropped.
+initMixpanel("tenant_web");
 
 const root = createRoot(document.getElementById("root"));
 

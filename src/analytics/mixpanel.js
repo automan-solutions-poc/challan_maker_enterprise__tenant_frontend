@@ -6,6 +6,13 @@ const TOKEN =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_MIXPANEL_TOKEN) ||
   "";
 
+// Must match the project's data residency: https://api-js.mixpanel.com (US, default),
+// https://api-eu.mixpanel.com (EU) or https://api-in.mixpanel.com (India).
+const API_HOST =
+  process.env.REACT_APP_MIXPANEL_API_HOST ||
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_MIXPANEL_API_HOST) ||
+  "";
+
 let initialized = false;
 let currentPlatform = "unknown";
 
@@ -15,8 +22,15 @@ function canTrack() {
 
 export function initMixpanel(platform) {
   currentPlatform = platform;
-  if (!TOKEN || initialized) return;
+  if (initialized) return;
+  if (!TOKEN) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[analytics] Mixpanel token missing; tracking disabled. Set it in .env and restart the dev server.");
+    }
+    return;
+  }
   mixpanel.init(TOKEN, {
+    ...(API_HOST && { api_host: API_HOST }),
     debug: process.env.NODE_ENV === "development",
     track_pageview: false,
     persistence: "localStorage",
