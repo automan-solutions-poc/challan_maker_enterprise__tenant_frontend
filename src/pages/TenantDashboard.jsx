@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Row, Col, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { FileText, Clock, CheckCircle2, Plus, Gauge, ArrowRight, AlertCircle } from "lucide-react";
+import { FileText, Clock, CheckCircle2, Plus, Gauge, ArrowRight, AlertCircle, IndianRupee, Wallet, Receipt } from "lucide-react";
 import {
   ResponsiveContainer,
   PieChart,
@@ -19,6 +19,7 @@ import Loader from "../components/Loader";
 import PageHeader from "../components/PageHeader";
 import { useTheme } from "../ThemeContext";
 import { getStoredUser } from "../utils/session";
+import { formatMoney } from "../utils/money";
 
 // SVG attributes can't resolve CSS variables, so chart colours are picked per theme here.
 const CHART_THEME = {
@@ -54,6 +55,7 @@ export default function TenantDashboard() {
     pending: 0,
     delivered: 0,
     usage: {},
+    payments: null,
     charts: { status_breakdown: [], challans_by_month: [] },
   });
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,7 @@ export default function TenantDashboard() {
           pending: res.data.pending ?? 0,
           delivered: res.data.delivered ?? 0,
           usage: res.data.usage || {},
+          payments: res.data.payments || null,
           charts: res.data.charts || {
             status_breakdown: [],
             challans_by_month: [],
@@ -114,6 +117,21 @@ export default function TenantDashboard() {
     { label: "Pending", value: stats.pending ?? 0, icon: Clock, tone: "tone-warning", foot: "Awaiting pickup" },
     { label: "Delivered", value: stats.delivered ?? 0, icon: CheckCircle2, tone: "tone-success", foot: "OTP verified" },
   ];
+
+  const pay = stats.payments;
+  const paymentCards = pay && pay.billed > 0
+    ? [
+        { label: "Billed", value: formatMoney(pay.billed), icon: Receipt, tone: "", foot: "Total of all challans" },
+        { label: "Collected", value: formatMoney(pay.collected), icon: Wallet, tone: "tone-success", foot: `${pay.paid} fully paid` },
+        {
+          label: "Outstanding",
+          value: formatMoney(pay.outstanding),
+          icon: IndianRupee,
+          tone: "tone-warning",
+          foot: `${pay.partial} part paid · ${pay.unpaid} unpaid`,
+        },
+      ]
+    : [];
 
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 
@@ -187,6 +205,31 @@ export default function TenantDashboard() {
           </div>
         </Col>
       </Row>
+
+      {paymentCards.length > 0 && (
+        <Row className="g-3 mb-3">
+          {paymentCards.map(({ label, value, icon: Icon, tone, foot }) => (
+            <Col sm={6} xl={4} key={label}>
+              <div
+                className="surface stat-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/app/challans")}
+                onKeyDown={(e) => e.key === "Enter" && navigate("/app/challans")}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  <span className="stat-label">{label}</span>
+                  <span className={`icon-tile ${tone}`} style={{ width: 34, height: 34, borderRadius: 10 }}>
+                    <Icon size={17} />
+                  </span>
+                </div>
+                <div className="stat-value tabular-nums">{value}</div>
+                <div className="stat-foot">{foot}</div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      )}
 
       {stats.total === 0 && !error ? (
         <div className="surface empty-state">

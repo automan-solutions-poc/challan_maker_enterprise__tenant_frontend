@@ -23,7 +23,7 @@
 
 .item-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 88px 32px;
+  grid-template-columns: 28px minmax(0, 1fr) 72px 104px 32px;
   gap: 0.5rem;
   align-items: center;
 }
@@ -42,6 +42,43 @@
   color: var(--text-faint);
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* Pricing summary */
+.pay-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--bg-subtle);
+}
+
+.pay-summary dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pay-summary dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.pay-summary .is-balance dd {
+  color: var(--warning);
+}
+
+@media (max-width: 575.98px) {
+  .item-row {
+    grid-template-columns: 22px minmax(0, 1fr) 56px 80px 28px;
+    gap: 0.35rem;
+  }
 }
 
 /* Upload */

@@ -16,6 +16,7 @@ export const Events = {
   CHALLAN_QR_VIEWED: "Challan QR Viewed",
   CHALLAN_OTP_SENT: "Challan OTP Sent",
   CHALLAN_OTP_VERIFIED: "Challan OTP Verified",
+  CHALLAN_PAYMENT_RECORDED: "Challan Payment Recorded",
   EMAIL_NAMES_SAVED: "Email Sender Names Saved",
   EMAIL_TEST_SENT: "Test Email Sent",
   EMAIL_TEST_FAILED: "Test Email Failed",

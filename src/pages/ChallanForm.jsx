@@ -8,6 +8,8 @@ import Loader from "../components/Loader";
 import PageHeader from "../components/PageHeader";
 import "./ChallanForm.css";
 import { trackEvent, Events } from "../analytics";
+import { formatMoney, itemsTotal, lineAmount, paymentStatus, toNumber, PAYMENT_MODES } from "../utils/money";
+import PaymentBadge from "../components/PaymentBadge";
 
 const ACCESSORIES = [
   "Desktop", "Laptop", "SSD", "Adapter", "RAM", "Carry Case",
@@ -37,8 +39,12 @@ export default function ChallanForm({ editMode = false }) {
     warranty: "",
     dispatch_through: "",
     employee_id: "",
-    items: [{ description: "", quantity: 1 }],
+    items: [{ description: "", quantity: 1, rate: "" }],
+    total_amount: "", // empty = use the sum of item rates
+    advance_paid: "",
+    payment_mode: "cash",
   });
+  const [amountPaid, setAmountPaid] = useState(0); // already recorded (edit mode)
 
   const [images, setImages] = useState([]);
   const [notice, setNotice] = useState(null);
@@ -80,9 +86,16 @@ export default function ChallanForm({ editMode = false }) {
                   dispatch_through: data.dispatch_through || "",
                   employee_id: data.employee_id || "",
                   items: data.items?.length
-                    ? data.items
-                    : [{ description: "", quantity: 1 }],
+                    ? data.items.map((it) => ({ ...it, rate: it.rate ?? "" }))
+                    : [{ description: "", quantity: 1, rate: "" }],
+                  total_amount:
+                    data.total_amount && data.total_amount !== itemsTotal(data.items || [])
+                      ? String(data.total_amount)
+                      : "",
+                  advance_paid: "",
+                  payment_mode: "cash",
                 });
+                setAmountPaid(data.amount_paid || 0);
               })
             : Promise.resolve();
 
@@ -108,7 +121,7 @@ export default function ChallanForm({ editMode = false }) {
   };
 
   const addItem = () =>
-    setForm((f) => ({ ...f, items: [...f.items, { description: "", quantity: 1 }] }));
+    setForm((f) => ({ ...f, items: [...f.items, { description: "", quantity: 1, rate: "" }] }));
 
   const removeItem = (idx) =>
     setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
@@ -133,13 +146,34 @@ export default function ChallanForm({ editMode = false }) {
 
   const removeImage = (idx) => setImages((prev) => prev.filter((_, i) => i !== idx));
 
+  const autoTotal = itemsTotal(form.items);
+  const effectiveTotal = form.total_amount !== "" ? toNumber(form.total_amount) : autoTotal;
+  const paidNow = editMode ? toNumber(amountPaid) : toNumber(form.advance_paid);
+  const balanceDue = Math.max(effectiveTotal - paidNow, 0);
+  const payState = paymentStatus(effectiveTotal, paidNow);
+  const paymentError =
+    effectiveTotal > 0 && paidNow > effectiveTotal
+      ? editMode
+        ? `Total can't be less than the ${formatMoney(paidNow)} already paid.`
+        : "Advance can't be more than the total amount."
+      : "";
+
   const submit = async (e) => {
     e.preventDefault();
+    if (paymentError) {
+      setNotice({ variant: "danger", text: paymentError });
+      return;
+    }
     setLoading(true);
     setNotice(null);
     try {
+      const payload = { ...form };
+      if (editMode) {
+        delete payload.advance_paid;
+        delete payload.payment_mode;
+      }
       const data = new FormData();
-      data.append("data", JSON.stringify(form));
+      data.append("data", JSON.stringify(payload));
       images.forEach((f) => data.append("images", f));
 
       if (editMode && challan_no) {
@@ -266,6 +300,7 @@ export default function ChallanForm({ editMode = false }) {
                   <span>#</span>
                   <span>Description / component</span>
                   <span>Qty</span>
+                  <span>Rate (₹)</span>
                   <span />
                 </div>
                 {form.items.map((item, idx) => (
@@ -283,6 +318,17 @@ export default function ChallanForm({ editMode = false }) {
                       value={item.quantity}
                       onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
                       aria-label={`Item ${idx + 1} quantity`}
+                    />
+                    <Form.Control
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      placeholder="0"
+                      value={item.rate ?? ""}
+                      onChange={(e) => handleItemChange(idx, "rate", e.target.value)}
+                      aria-label={`Item ${idx + 1} rate`}
+                      title={lineAmount(item) ? `Line amount ${formatMoney(lineAmount(item))}` : undefined}
                     />
                     <Button
                       variant="ghost"
@@ -326,6 +372,104 @@ export default function ChallanForm({ editMode = false }) {
                   ))}
                 </ul>
               )}
+            </section>
+
+            {/* Pricing & payment */}
+            <section className="surface surface-pad mb-3">
+              <div className="section-head d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <h2 className="section-title">Pricing and payment</h2>
+                  <p className="section-desc">
+                    {editMode
+                      ? "Change the total here. Record payments from the challans list."
+                      : "Note any advance the customer paid now. The balance is collected at handover."}
+                  </p>
+                </div>
+                <PaymentBadge status={payState} />
+              </div>
+              <Row className="g-3">
+                <Col md={editMode ? 12 : 4}>
+                  <Form.Group controlId="cf-total">
+                    <Form.Label>
+                      Total amount (₹){" "}
+                      <span className="optional">{form.total_amount === "" ? "from item rates" : "manual"}</span>
+                    </Form.Label>
+                    <Form.Control
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      placeholder={autoTotal ? String(autoTotal) : "0"}
+                      value={form.total_amount}
+                      onChange={setField("total_amount")}
+                    />
+                    <Form.Text>Leave blank to use the sum of item rates ({formatMoney(autoTotal)}).</Form.Text>
+                  </Form.Group>
+                </Col>
+                {!editMode && (
+                  <>
+                    <Col md={4}>
+                      <Form.Group controlId="cf-advance">
+                        <Form.Label>
+                          Advance paid (₹) <span className="optional">optional</span>
+                        </Form.Label>
+                        <Form.Control
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={form.advance_paid}
+                          onChange={setField("advance_paid")}
+                          isInvalid={!!paymentError}
+                        />
+                        <Form.Control.Feedback type="invalid">{paymentError}</Form.Control.Feedback>
+                        {effectiveTotal > 0 && (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="px-0"
+                            onClick={() => setForm((f) => ({ ...f, advance_paid: String(effectiveTotal) }))}
+                          >
+                            Paid in full
+                          </Button>
+                        )}
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Form.Group controlId="cf-mode">
+                        <Form.Label>Payment mode</Form.Label>
+                        <Form.Select
+                          value={form.payment_mode}
+                          onChange={setField("payment_mode")}
+                          disabled={toNumber(form.advance_paid) <= 0}
+                        >
+                          {PAYMENT_MODES.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </>
+                )}
+              </Row>
+              {editMode && paymentError && <div className="text-danger small mt-2">{paymentError}</div>}
+              <dl className="pay-summary">
+                <div>
+                  <dt>Total</dt>
+                  <dd>{formatMoney(effectiveTotal)}</dd>
+                </div>
+                <div>
+                  <dt>{editMode ? "Paid so far" : "Paid now"}</dt>
+                  <dd>{formatMoney(paidNow)}</dd>
+                </div>
+                <div className="is-balance">
+                  <dt>Balance due</dt>
+                  <dd>{formatMoney(balanceDue)}</dd>
+                </div>
+              </dl>
             </section>
 
             {/* Handover */}
@@ -404,7 +548,17 @@ export default function ChallanForm({ editMode = false }) {
               <span className="page-eyebrow mb-0">Live preview</span>
               <span className="small text-faint">Updates as you type</span>
             </div>
-            <ChallanPreview template={template} data={{ ...form, challan_no: editMode ? challan_no : "AUTO" }} />
+            <ChallanPreview
+              template={template}
+              data={{
+                ...form,
+                challan_no: editMode ? challan_no : "AUTO",
+                total_amount: effectiveTotal,
+                amount_paid: paidNow,
+                balance_due: balanceDue,
+                payment_status: payState,
+              }}
+            />
           </div>
         </aside>
       </div>
