@@ -23,10 +23,13 @@ import {
   AlertCircle,
   Info,
   SearchX,
+  IndianRupee,
 } from "lucide-react";
 import Loader from "../components/Loader";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import PaymentBadge from "../components/PaymentBadge";
+import { formatMoney, toNumber, PAYMENT_MODES } from "../utils/money";
 import { useConfirm } from "../components/ConfirmDialog";
 import "./ChallansPage.css";
 import { trackEvent, Events } from "../analytics";
@@ -34,7 +37,8 @@ import { resolveTrustedAssetUrl } from "../utils/safeUrl";
 import { getStoredUser } from "../utils/session";
 
 const PAGE_SIZE = 25;
-const EMPTY_FILTERS = { search: "", fromDate: "", toDate: "", status: "all" };
+const EMPTY_FILTERS = { search: "", fromDate: "", toDate: "", status: "all", payment: "all" };
+const EMPTY_PAYMENT = { amount: "", mode: "cash", note: "" };
 const NOTICE_ICONS = { success: CheckCircle2, danger: AlertCircle, warning: AlertTriangle, info: Info };
 
 // Server dates arrive as "dd/mm/yyyy, hh:mm:ss"
@@ -88,6 +92,12 @@ export default function ChallansPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
   const [usage, setUsage] = useState(null);
+  const [payTarget, setPayTarget] = useState(null);
+  const [payForm, setPayForm] = useState(EMPTY_PAYMENT);
+  const [payError, setPayError] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [collectBalance, setCollectBalance] = useState(false);
+  const [handoverMode, setHandoverMode] = useState("cash");
 
   const [confirm, confirmDialog] = useConfirm();
   const navigate = useNavigate();
@@ -166,6 +176,7 @@ export default function ChallansPage() {
     return challans.filter((c) => {
       const status = (c.status || "pending").toLowerCase();
       if (filters.status !== "all" && status !== filters.status) return false;
+      if (filters.payment !== "all" && (c.payment_status || "none") !== filters.payment) return false;
 
       if (fromDate || toDate) {
         const d = parseChallanDate(c.date);
@@ -186,7 +197,11 @@ export default function ChallansPage() {
   }, [challans, filters]);
 
   const filtersActive =
-    filters.search.trim() !== "" || filters.fromDate !== "" || filters.toDate !== "" || filters.status !== "all";
+    filters.search.trim() !== "" ||
+    filters.fromDate !== "" ||
+    filters.toDate !== "" ||
+    filters.status !== "all" ||
+    filters.payment !== "all";
 
   const pageCount = Math.max(1, Math.ceil(filteredChallans.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -384,7 +399,56 @@ export default function ChallansPage() {
     setSelectedChallan(challan);
     setOtpValue("");
     setOtpError("");
+    setCollectBalance(false);
+    setHandoverMode("cash");
     setOtpModal(true);
+  };
+
+  // -----------------------
+  // Payments
+  // -----------------------
+  const openPayment = (challan) => {
+    setPayTarget(challan);
+    setPayForm({ ...EMPTY_PAYMENT, amount: String(challan.balance_due || "") });
+    setPayError("");
+  };
+
+  const submitPayment = async (e) => {
+    e?.preventDefault();
+    if (!payTarget) return;
+    const amount = toNumber(payForm.amount);
+    if (amount <= 0) {
+      setPayError("Enter an amount greater than zero.");
+      return;
+    }
+    if (amount > (payTarget.balance_due || 0) + 0.001) {
+      setPayError(`That's more than the ${formatMoney(payTarget.balance_due)} balance due.`);
+      return;
+    }
+    setPaying(true);
+    setPayError("");
+    try {
+      const res = await API.post(`/challan/${payTarget.challan_no}/payment`, {
+        amount,
+        mode: payForm.mode,
+        note: payForm.note,
+      });
+      trackEvent(Events.CHALLAN_PAYMENT_RECORDED, { challan_no: payTarget.challan_no, mode: payForm.mode });
+      const left = res.data?.balance_due || 0;
+      notify(
+        "success",
+        left > 0
+          ? `${formatMoney(amount)} recorded for ${payTarget.challan_no}. ${formatMoney(left)} still due.`
+          : `${payTarget.challan_no} is now fully paid.`
+      );
+      setPayTarget(null);
+      fetchChallans();
+    } catch (err) {
+      console.error(err);
+      setPayError(err.response?.data?.error || "Could not record the payment.");
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleVerifyOTP = async (e) => {
@@ -396,7 +460,11 @@ export default function ChallansPage() {
     setVerifying(true);
     setOtpError("");
     try {
-      const res = await API.post(`/challan/${selectedChallan.challan_no}/verify_otp`, { otp: otpValue });
+      const res = await API.post(`/challan/${selectedChallan.challan_no}/verify_otp`, {
+        otp: otpValue,
+        collect_balance: collectBalance,
+        payment_mode: handoverMode,
+      });
       trackEvent(Events.CHALLAN_OTP_VERIFIED, { challan_no: selectedChallan.challan_no });
       trackEvent(Events.CHALLAN_DELIVERED, { challan_no: selectedChallan.challan_no });
       notify("success", res.data?.message || `${selectedChallan.challan_no} marked as delivered.`);
@@ -454,6 +522,11 @@ export default function ChallansPage() {
           <Dropdown.Item onClick={() => handleViewQR(c.qr_code_url, c.challan_no)}>
             <QrCode size={15} /> View QR code
           </Dropdown.Item>
+          {(c.balance_due || 0) > 0 && (
+            <Dropdown.Item onClick={() => openPayment(c)}>
+              <IndianRupee size={15} /> Record payment
+            </Dropdown.Item>
+          )}
           {!delivered && (
             <>
               <Dropdown.Item onClick={() => navigate(`/app/challan/${c.challan_no}/edit`)}>
@@ -556,6 +629,20 @@ export default function ChallansPage() {
             ))}
           </div>
 
+          <Form.Select
+            size="sm"
+            className="challans-payment-filter"
+            value={filters.payment}
+            onChange={(e) => updateFilter("payment", e.target.value)}
+            aria-label="Filter by payment"
+          >
+            <option value="all">All payments</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="partial">Part paid (balance due)</option>
+            <option value="paid">Fully paid</option>
+            <option value="none">No charge</option>
+          </Form.Select>
+
           <div className="challans-dates">
             <Form.Control
               type="date"
@@ -649,6 +736,15 @@ export default function ChallansPage() {
                       {[c.serial_number, date.day].filter(Boolean).join(" · ")}
                     </div>
                     {c.problem && <div className="challan-card-problem">{c.problem}</div>}
+                    {(c.total_amount || 0) > 0 && (
+                      <div className="d-flex align-items-center gap-2 mt-2 small tabular-nums">
+                        <PaymentBadge status={c.payment_status} />
+                        <span>{formatMoney(c.total_amount)}</span>
+                        {(c.balance_due || 0) > 0 && (
+                          <span className="text-faint">· {formatMoney(c.balance_due)} due</span>
+                        )}
+                      </div>
+                    )}
                     {c.status !== "delivered" && (
                       <Button variant="secondary" size="sm" className="w-100 mt-3" onClick={() => handleOpenVerifyOTP(c)}>
                         <ShieldCheck size={14} /> Verify handover
@@ -677,6 +773,7 @@ export default function ChallansPage() {
                     <th>Device</th>
                     <th>Problem</th>
                     <th>Status</th>
+                    <th>Payment</th>
                     <th className="text-end">
                       <span className="visually-hidden">Actions</span>
                     </th>
@@ -720,6 +817,19 @@ export default function ChallansPage() {
                         </td>
                         <td>
                           <StatusBadge status={c.status} />
+                        </td>
+                        <td className="text-nowrap tabular-nums">
+                          {(c.total_amount || 0) > 0 ? (
+                            <>
+                              <PaymentBadge status={c.payment_status} />
+                              <div className="cell-sub">
+                                {formatMoney(c.total_amount)}
+                                {(c.balance_due || 0) > 0 && ` · ${formatMoney(c.balance_due)} due`}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-faint">—</span>
+                          )}
                         </td>
                         <td className="text-end">
                           <div className="d-inline-flex align-items-center gap-1">
@@ -836,6 +946,41 @@ export default function ChallansPage() {
                 <StatusBadge status={selectedChallan.status} />
               </div>
             )}
+            {selectedChallan && (selectedChallan.balance_due || 0) > 0 && (
+              <Alert variant="warning" className="mb-3">
+                <AlertTriangle size={16} className="flex-shrink-0 mt-1" />
+                <div className="w-100">
+                  <div>
+                    <strong>{formatMoney(selectedChallan.balance_due)}</strong> balance due (paid{" "}
+                    {formatMoney(selectedChallan.amount_paid)} of {formatMoney(selectedChallan.total_amount)}).
+                  </div>
+                  <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+                    <Form.Check
+                      type="checkbox"
+                      id="collect-balance"
+                      label="Balance collected now"
+                      checked={collectBalance}
+                      onChange={(e) => setCollectBalance(e.target.checked)}
+                    />
+                    {collectBalance && (
+                      <Form.Select
+                        size="sm"
+                        style={{ width: "auto" }}
+                        value={handoverMode}
+                        onChange={(e) => setHandoverMode(e.target.value)}
+                        aria-label="Payment mode"
+                      >
+                        {PAYMENT_MODES.map((m) => (
+                          <option key={m.value} value={m.value}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    )}
+                  </div>
+                </div>
+              </Alert>
+            )}
             <Form.Group controlId="otp-code">
               <Form.Label>Code from the customer&apos;s email</Form.Label>
               <Form.Control
@@ -877,6 +1022,95 @@ export default function ChallansPage() {
               ) : (
                 <>
                   <ShieldCheck size={15} /> Verify and deliver
+                </>
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Payment Modal */}
+      <Modal show={!!payTarget} onHide={() => !paying && setPayTarget(null)} centered>
+        <Form onSubmit={submitPayment}>
+          <Modal.Header closeButton>
+            <Modal.Title>Record payment</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {payTarget && (
+              <div className="usage-card d-flex justify-content-between align-items-center gap-3 mb-3">
+                <div className="min-w-0">
+                  <div style={{ color: "var(--text-main)", fontWeight: 600 }}>
+                    {payTarget.challan_no} · {payTarget.customer_name}
+                  </div>
+                  <div className="small text-muted tabular-nums">
+                    Total {formatMoney(payTarget.total_amount)} · Paid {formatMoney(payTarget.amount_paid)} ·{" "}
+                    <strong>Due {formatMoney(payTarget.balance_due)}</strong>
+                  </div>
+                </div>
+                <PaymentBadge status={payTarget.payment_status} />
+              </div>
+            )}
+            <Form.Group className="mb-3" controlId="pay-amount">
+              <Form.Label>Amount received (₹)</Form.Label>
+              <Form.Control
+                type="number"
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+                value={payForm.amount}
+                onChange={(e) => {
+                  setPayForm((f) => ({ ...f, amount: e.target.value }));
+                  setPayError("");
+                }}
+                isInvalid={!!payError}
+                autoFocus
+              />
+              <Form.Control.Feedback type="invalid">{payError}</Form.Control.Feedback>
+              {payTarget && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="px-0"
+                  onClick={() => setPayForm((f) => ({ ...f, amount: String(payTarget.balance_due) }))}
+                >
+                  Full balance ({formatMoney(payTarget.balance_due)})
+                </Button>
+              )}
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="pay-mode">
+              <Form.Label>Payment mode</Form.Label>
+              <Form.Select value={payForm.mode} onChange={(e) => setPayForm((f) => ({ ...f, mode: e.target.value }))}>
+                {PAYMENT_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group controlId="pay-note">
+              <Form.Label>
+                Note <span className="optional">optional</span>
+              </Form.Label>
+              <Form.Control
+                maxLength={255}
+                placeholder="e.g. UPI ref 4821…"
+                value={payForm.note}
+                onChange={(e) => setPayForm((f) => ({ ...f, note: e.target.value }))}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setPayTarget(null)} disabled={paying}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={paying}>
+              {paying ? (
+                <>
+                  <Spinner animation="border" size="sm" /> Saving…
+                </>
+              ) : (
+                <>
+                  <IndianRupee size={15} /> Record payment
                 </>
               )}
             </Button>

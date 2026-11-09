@@ -1,5 +1,6 @@
 import React from "react";
 import { getStoredUser } from "../utils/session";
+import { formatMoney, lineAmount, PAYMENT_LABELS } from "../utils/money";
 
 // Paper-style approximation of the generated PDF. Always light: it represents a printed document.
 export default function ChallanPreview({ template = {}, data = {} }) {
@@ -10,6 +11,10 @@ export default function ChallanPreview({ template = {}, data = {} }) {
       ? data.accessories.join(", ")
       : "—";
   const items = Array.isArray(data.items) ? data.items : [];
+  const hasRates = items.some((it) => it.rate !== "" && it.rate != null);
+  const total = Number(data.total_amount) || 0;
+  const paid = Number(data.amount_paid) || 0;
+  const showPayment = total > 0 || paid > 0;
   const terms = template.terms_conditions ? template.terms_conditions.split("<br/>").filter(Boolean) : [];
   const user = getStoredUser();
   const givenBy = user?.name || user?.full_name || "—";
@@ -85,6 +90,7 @@ export default function ChallanPreview({ template = {}, data = {} }) {
                 <th style={{ padding: 6, width: 36 }}>#</th>
                 <th style={{ padding: 6 }}>Description</th>
                 <th style={{ padding: 6, width: 64 }}>Qty</th>
+                {hasRates && <th style={{ padding: 6, textAlign: "right" }}>Amount</th>}
               </tr>
             </thead>
             <tbody>
@@ -93,8 +99,39 @@ export default function ChallanPreview({ template = {}, data = {} }) {
                   <td style={{ padding: 6 }}>{idx + 1}</td>
                   <td style={{ padding: 6 }}>{item.description || "—"}</td>
                   <td style={{ padding: 6 }}>{item.quantity || 1}</td>
+                  {hasRates && (
+                    <td style={{ padding: 6, textAlign: "right", whiteSpace: "nowrap" }}>
+                      {item.rate !== "" && item.rate != null ? formatMoney(lineAmount(item)) : "—"}
+                    </td>
+                  )}
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showPayment && (
+        <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+          <table style={{ minWidth: 220, borderCollapse: "collapse", color: "#333" }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: "3px 8px", ...label }}>Total</td>
+                <td style={{ padding: "3px 8px", textAlign: "right" }}>{formatMoney(total)}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: "3px 8px", ...label }}>Paid</td>
+                <td style={{ padding: "3px 8px", textAlign: "right" }}>{formatMoney(paid)}</td>
+              </tr>
+              <tr style={{ borderTop: "2px solid #333", fontWeight: 700 }}>
+                <td style={{ padding: "4px 8px" }}>Balance due</td>
+                <td style={{ padding: "4px 8px", textAlign: "right" }}>{formatMoney(data.balance_due)}</td>
+              </tr>
+              <tr>
+                <td colSpan={2} style={{ padding: "3px 8px", textAlign: "right", color: theme, fontWeight: 600, fontSize: 12 }}>
+                  {PAYMENT_LABELS[data.payment_status] || ""}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

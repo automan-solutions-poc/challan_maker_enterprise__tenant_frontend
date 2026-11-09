@@ -173,3 +173,8 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.challans-payment-filter {
+  width: auto;
+  min-width: 150px;
+}
